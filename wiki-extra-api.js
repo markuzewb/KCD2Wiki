@@ -14,9 +14,10 @@ const animations=animData.clips.map(x=>({clip:String(x.clip),families:x.families
 const animIndex=animations.map(x=>[x.clip,...x.families,...x.fragments].join(' ').toLocaleLowerCase('ru-RU'));
 const byClip=new Map(animations.map(x=>[x.clip,x]));
 const familyCounts={};for(const a of animations)for(const f of a.families)familyCounts[f]=(familyCounts[f]||0)+1;
+const MAP_LABELS=JSON.parse(fs.readFileSync(path.join(ROOT,'catalog','map-labels.json'),'utf8')).labels||{};
 const REGION_INFO={
- trosky:{title:'Троски',rows:4,cols:4,tileSize:1024,source:'Карты игрового режима KCD2RP'},
- kuttenberg:{title:'Кутна-Гора',rows:5,cols:6,tileSize:1024,source:'Карты игрового режима KCD2RP'}
+ trosky:{title:'Троски',rows:4,cols:4,tileSize:1024,source:'Карты игрового режима KCD2RP',labels:MAP_LABELS.trosky||[]},
+ kuttenberg:{title:'Кутна-Гора',rows:5,cols:6,tileSize:1024,source:'Карты игрового режима KCD2RP',labels:MAP_LABELS.kuttenberg||[]}
 };
 const J=(res,status,obj)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(obj));};
 const limit=(v,min,max,fallback)=>{const n=Number(v);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.floor(n))):fallback};

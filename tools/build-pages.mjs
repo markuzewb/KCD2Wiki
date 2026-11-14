@@ -55,9 +55,11 @@ for (const clip of clips) for (const family of clip.families) families[family] =
 writeJson('animations', { source: animations.source, imported: animations.imported, clips, families });
 writeJson('icons', { source: icons.source, total: icons.icons.length, categories: icons.categories, icons: icons.icons });
 writeJson('item-icon-map', { itemCount: matches.itemCount, matchedCount: matches.matchedCount, counts: matches.counts, items: matches.items });
+const mapLabels = readJson(path.join(root, 'catalog', 'map-labels.json'));
+if (!mapLabels.labels || !Array.isArray(mapLabels.labels.trosky) || !Array.isArray(mapLabels.labels.kuttenberg)) throw new Error('Invalid map labels data');
 const regionInfo = {
-  trosky: { title: 'Троски', rows: 4, cols: 4, tileSize: 1024, source: 'Карты игрового режима KCD2RP' },
-  kuttenberg: { title: 'Кутна-Гора', rows: 5, cols: 6, tileSize: 1024, source: 'Карты игрового режима KCD2RP' }
+  trosky: { title: 'Троски', rows: 4, cols: 4, tileSize: 1024, source: 'Карты игрового режима KCD2RP', labels: mapLabels.labels.trosky },
+  kuttenberg: { title: 'Кутна-Гора', rows: 5, cols: 6, tileSize: 1024, source: 'Карты игрового режима KCD2RP', labels: mapLabels.labels.kuttenberg }
 };
 writeJson('maps', { regions: regionInfo, markers: maps.markers, calibrated: false, notice: 'Игровые X/Y не привязаны к пикселям; метки размещаются вручную редактором.' });
 
