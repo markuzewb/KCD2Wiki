@@ -158,3 +158,15 @@ body::before{height:3px}
  .ref-hero-search{max-width:680px}
  .ref-region-marquee{margin-bottom:12px}
 }
+
+/* Compact item cards: icons render at native 64px sprite size instead of 4x upscale */
+.ref-app-shell .ref-item-art{height:96px}
+.ref-app-shell .ref-item-art>img{width:64px;height:64px;object-fit:contain}
+.ref-app-shell .ref-item-art .ref-art-placeholder{width:64px;height:64px}
+.ref-app-shell .ref-art-placeholder svg{width:28px;height:28px}
+.ref-app-shell .ref-item-id{font-size:12.5px;padding:3px 6px;top:7px;left:7px}
+.ref-app-shell .ref-item-details{min-height:0;padding:10px 12px 12px}
+.ref-app-shell .ref-item-details strong{font-size:17px}
+.ref-app-shell .ref-item-details>span{font-size:15px}
+.ref-item-chips{margin:14px 0 4px}
+@media(max-width:440px){.ref-app-shell .ref-item-art{height:84px}}

@@ -88,7 +88,7 @@ async function handle(req,res,u,ctx){
       ingredients:recipe.ingredients.map(x=>({...x,imageUrl:x.id?extras.imageListUrl(x.id):null}))},meta:basicMeta(d)}),true;}
   if(pathname==='/api/game/items'){
     const q=searchText(u.searchParams.get('q'));const role=u.searchParams.get('role')||'all';
-    const cat=u.searchParams.get('cat')||'';
+    const cat=u.searchParams.get('cat')||'';const sort=u.searchParams.get('sort')||'';
     let indices=[];
     for(let i=0;i<d.items.length;i++){
       const item=d.items[i];if(q&&!d._itemsIndex[i].includes(q))continue;
@@ -98,6 +98,11 @@ async function handle(req,res,u,ctx){
       if(role==='priced'&&item.referencePrice==null)continue;
       indices.push(item);
     }
+    const price=x=>x.gamePrice??x.referencePrice;
+    const cmp={'name-desc':(a,b)=>String(b.name).localeCompare(String(a.name),'ru'),
+      'price-desc':(a,b)=>(price(b)??-1)-(price(a)??-1),'price-asc':(a,b)=>(price(a)??Infinity)-(price(b)??Infinity),
+      'weight-desc':(a,b)=>(b.weight??-1)-(a.weight??-1),'weight-asc':(a,b)=>(a.weight??Infinity)-(b.weight??Infinity)}[sort];
+    if(cmp)indices.sort(cmp);
     return answer(res,200,{...pageOf(indices,u.searchParams),rows:pageOf(indices,u.searchParams).rows.map(x=>{const row=itemSummary(x);delete row.stats;return row;}),meta:basicMeta(d)}),true;
   }
   if(pathname==='/api/game/recipes'){
