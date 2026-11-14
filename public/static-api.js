@@ -76,14 +76,15 @@
 
     if (path === '/api/animations/meta') {
       const data = await load('animations');
-      return json({ count: data.clips.length, families: data.families, source: data.source, imported: data.imported });
+      return json({ count: data.clips.length, families: data.families, cats: data.cats || {}, source: data.source, imported: data.imported });
     }
     if (path === '/api/animations') {
       const data = await load('animations');
       const search = text(query.get('q'));
       const family = query.get('family') || '';
-      const rows = data.clips.filter(clip => (!search || text([clip.clip, ...clip.families, ...clip.fragments].join(' ')).includes(search)) && (!family || clip.families.includes(family)));
-      return json({ ...pageOf(rows, query, 30), families: data.families });
+      const cat = query.get('cat') || '';
+      const rows = data.clips.filter(clip => (!search || text([clip.clip, clip.ru || '', clip.desc || '', ...clip.families, ...clip.fragments].join(' ')).includes(search)) && (!family || clip.families.includes(family)) && (!cat || clip.cat === cat));
+      return json({ ...pageOf(rows, query, 30), families: data.families, cats: data.cats || {} });
     }
     const animation = path.match(/^\/api\/animations\/([^/]+)$/);
     if (animation) {
@@ -102,8 +103,10 @@
       const { game, matches } = await gameData();
       const search = text(query.get('q'));
       const role = query.get('role') || 'all';
+      const cat = query.get('cat') || '';
       const rows = game.items.filter(item =>
         (!search || text([item.name, item.english, item.internal, item.id].join(' ')).includes(search)) &&
+        (!cat || item.category === cat) &&
         (role !== 'result' || item.recipeOutputs) &&
         (role !== 'ingredient' || item.recipeUses) &&
         (role !== 'priced' || item.referencePrice != null)
@@ -130,7 +133,8 @@
       const found = guid.test(id) && game.items.find(row => row.id.toLowerCase() === id);
       if (!found) return json({ error: 'Предмет не найден' }, 404);
       const related = game.recipes.filter(recipe => recipe.outputs.some(row => row.id === found.id) || recipe.ingredients.some(row => row.id === found.id)).slice(0, 40);
-      return json({ item: itemSummary(found, game, matches), related: related.map(recipe => recipeSummary(recipe, game, matches)), meta: game.meta });
+      const stats = await load('item-stats').then(data => data.items[found.id.toLowerCase()] || []).catch(() => []);
+      return json({ item: { ...itemSummary(found, game, matches), stats }, related: related.map(recipe => recipeSummary(recipe, game, matches)), meta: game.meta });
     }
     const recipe = path.match(/^\/api\/game\/recipes\/([^/]+)$/);
     if (recipe) {

@@ -48,11 +48,23 @@ if (fs.existsSync(mediaSource)) {
     media[match[1].toLowerCase()] = '/media/items/' + name;
   }
 }
-writeJson('game', { meta: publicMeta, items: game.items, recipes: game.recipes, media });
+// Heavy per-item game stats ship in a separate file loaded only for detail cards.
+const itemStats = {};
+for (const item of game.items) if (Array.isArray(item.stats) && item.stats.length) itemStats[item.id.toLowerCase()] = item.stats;
+const leanItems = game.items.map(({ stats, ...rest }) => rest);
+writeJson('game', { meta: publicMeta, items: leanItems, recipes: game.recipes, media });
+writeJson('item-stats', { items: itemStats });
 const families = {};
-const clips = animations.clips.map(row => ({ clip: String(row.clip), families: row.families || [], fragments: row.fragments || [] }));
-for (const clip of clips) for (const family of clip.families) families[family] = (families[family] || 0) + 1;
-writeJson('animations', { source: animations.source, imported: animations.imported, clips, families });
+const animCats = {};
+const clips = animations.clips.map(row => ({
+  clip: String(row.clip), families: row.families || [], fragments: row.fragments || [],
+  ru: row.ru || '', desc: row.desc || '', phase: row.phase || '', cat: row.cat || '', pose: row.pose || '', kind: row.kind || ''
+}));
+for (const clip of clips) {
+  for (const family of clip.families) families[family] = (families[family] || 0) + 1;
+  if (clip.cat) animCats[clip.cat] = (animCats[clip.cat] || 0) + 1;
+}
+writeJson('animations', { source: animations.source, imported: animations.imported, clips, families, cats: animCats });
 writeJson('icons', { source: icons.source, total: icons.icons.length, categories: icons.categories, icons: icons.icons });
 writeJson('item-icon-map', { itemCount: matches.itemCount, matchedCount: matches.matchedCount, counts: matches.counts, items: matches.items });
 const mapLabels = readJson(path.join(root, 'catalog', 'map-labels.json'));

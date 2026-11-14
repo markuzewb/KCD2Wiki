@@ -97,3 +97,10 @@
 .wiki-map-town.kind-minor .wiki-map-town-scroll{font-size:12.5px;font-weight:500;color:#51401f}
 .wiki-map-town.kind-water>em{font-family:'Alegreya SC','Palatino Linotype',Georgia,serif;font-weight:500;font-style:italic;font-size:14.5px;letter-spacing:.16em;color:#275a6e;text-shadow:0 1px 3px #f2ead0d9,0 -1px 3px #f2ead0d9,1px 0 3px #f2ead0d9,-1px 0 3px #f2ead0d9}
 .wiki-map-town-scroll:hover{filter:brightness(1.07) drop-shadow(0 0 6px #ffdf9a66)}
+
+/* Item game stats (data imported from KCD2BaseItem) */
+.game-item-stats{margin-top:18px}
+.game-stats-group{margin-top:14px}
+.game-stats-group h3{margin:0 0 8px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted,#8a7f6d);font-weight:700}
+.extra-clip-code{margin:2px 0 10px}
+.extra-clip-code code{font-size:12.5px;opacity:.8;word-break:break-all}
