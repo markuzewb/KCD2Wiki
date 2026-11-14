@@ -124,6 +124,15 @@ if not ANIMS_ONLY:
                  'valuables': '💎', 'keys': '🗝️', 'tools': '🔧', 'household': '🏠', 'world': '🗺️', 'misc': '🎒'}
     meta['itemCategories'] = [[slug, cat_counts[slug][0], cat_counts[slug][1], CAT_ICONS[slug]]
                               for slug in CAT_ORDER if slug in cat_counts]
+    sub_counts = {}
+    for i in merged:
+        sub_counts.setdefault(i['category'], {})
+        sub = i.get('subName') or 'Прочее'
+        sub_counts[i['category']][sub] = sub_counts[i['category']].get(sub, 0) + 1
+    meta['itemSubcats'] = {
+        cat: sorted(([s, n] for s, n in counts.items() if s != 'Прочее'), key=lambda x: (-x[1], x[0]))
+             + ([['Прочее', counts['Прочее']]] if 'Прочее' in counts else [])
+        for cat, counts in sub_counts.items()}
     meta['baseItemSource'] = 'KCD2BaseItem (markuzewb) — полная база предметов и игровых иконок KCD2'
     meta['baseItemImportedAt'] = '2026-11-14T00:00:00Z'
     catalog['items'] = merged

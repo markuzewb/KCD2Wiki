@@ -75,9 +75,9 @@ function WikiCatalogPager({page,total,pages,onChange}){
    h('button',{type:'button',disabled:page>=pages,onClick:()=>onChange(Math.min(pages,page+1))},'Далее →'));
 }
 class GameCatalogPage extends React.Component{
- constructor(props){super(props);this.state={q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
+ constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
  componentDidMount(){this.load();}
- componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
+ componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
  componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;}
  filter(name,value){this.setState({[name]:value,page:1},()=>{clearTimeout(this._timer);this._timer=setTimeout(()=>this.load(),220);});}
  page(n){this.setState({page:n},()=>this.load());}
@@ -87,6 +87,7 @@ class GameCatalogPage extends React.Component{
   else{const q=new URLSearchParams({q:st.q,page:String(st.page),limit:'30'});
    if(mode==='items'&&st.role!=='all')q.set('role',st.role);
    if(mode==='items'&&st.cat)q.set('cat',st.cat);
+   if(mode==='items'&&st.cat&&st.sub)q.set('sub',st.sub);
    if(mode==='items'&&st.sort)q.set('sort',st.sort);
    if(mode==='recipes')for(const k of ['kind','craft','level','sort'])if(st[k])q.set(k,st[k]);
    url='/api/game/'+mode+'?'+q.toString();}
@@ -105,14 +106,19 @@ class GameCatalogPage extends React.Component{
   const isItem=this.props.mode==='items',st=this.state;
   const tabs=h('div',{className:'ref-catalog-tabs'},h(Link,{to:'/game/items',className:cls('ref-tab',isItem&&'active')},'Предметы'),h(Link,{to:'/game/recipes',className:cls('ref-tab',!isItem&&'active')},'Рецепты'));
   const chip=(active,onClick,label,key)=>h('button',{key,className:'extra-chip'+(active?' active':''),onClick},label);
+  const subcats=isItem&&st.cat?(st.meta?.itemSubcats?.[st.cat]||[]):[];
+  const catRow=st.meta?.itemCategories?.find(c=>c[0]===st.cat);
   const itemChips=isItem&&h('div',{className:'extra-chips ref-item-chips'},
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Категория'),
-      (st.meta?.itemCategories||[]).map(c=>chip(st.cat===c[0],()=>this.filter('cat',st.cat===c[0]?'':c[0]),(c[3]?c[3]+' ':'')+c[1]+' · '+fmtCount(c[2]),c[0]))),
+      (st.meta?.itemCategories||[]).map(c=>chip(st.cat===c[0],()=>this.setState({cat:st.cat===c[0]?'':c[0],sub:'',page:1},()=>this.load()),(c[3]?c[3]+' ':'')+c[1]+' · '+fmtCount(c[2]),c[0]))),
+    subcats.length>1?h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
+      chip(!st.sub,()=>this.filter('sub',''),'Все · '+fmtCount(catRow?catRow[2]:0),'all-subs'),
+      subcats.map(s=>chip(st.sub===s[0],()=>this.filter('sub',st.sub===s[0]?'':s[0]),s[0]+' · '+fmtCount(s[1]),s[0]))):null,
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Фильтр'),
       [['result','Результаты изготовления'],['ingredient','Ингредиенты'],['priced','Со справочной ценой']].map(v=>chip(st.role===v[0],()=>this.filter('role',st.role===v[0]?'all':v[0]),v[1],v[0]))),
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
       [['','Название А–Я'],['name-desc','Название Я–А'],['price-desc','Цена: дорогие'],['price-asc','Цена: дешёвые'],['weight-desc','Вес: тяжёлые'],['weight-asc','Вес: лёгкие']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
-    (st.cat||st.role!=='all'||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',cat:'',role:'all',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
+    (st.cat||st.sub||st.role!=='all'||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',cat:'',sub:'',role:'all',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
   const crafts=st.meta?.recipeCrafts||Object.entries(st.meta?.craftNames||{}).map(([k,v])=>[k,v,0,'🛠️']);
   const recipeChips=!isItem&&h('div',{className:'extra-chips ref-item-chips'},
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Ремесло'),
