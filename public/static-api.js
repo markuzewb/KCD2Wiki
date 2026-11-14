@@ -35,6 +35,18 @@
     const limit = bound(query.get('limit'), 1, 80, defaultLimit);
     return { page, limit, total: rows.length, pages: Math.max(1, Math.ceil(rows.length / limit)), rows: rows.slice((page - 1) * limit, page * limit) };
   }
+  function sortItems(rows, sort) {
+    const price = item => item.gamePrice ?? item.referencePrice;
+    const cmp = {
+      'name-desc': (a, b) => String(b.name).localeCompare(String(a.name), 'ru'),
+      'price-desc': (a, b) => (price(b) ?? -1) - (price(a) ?? -1),
+      'price-asc': (a, b) => (price(a) ?? Infinity) - (price(b) ?? Infinity),
+      'weight-desc': (a, b) => (b.weight ?? -1) - (a.weight ?? -1),
+      'weight-asc': (a, b) => (a.weight ?? Infinity) - (b.weight ?? Infinity)
+    }[sort];
+    if (cmp) rows.sort(cmp);
+    return rows;
+  }
   function itemImage(id, game, matches) {
     const key = String(id || '').toLowerCase();
     return game.media?.[key] || matches.items[key]?.path || null;
@@ -112,6 +124,7 @@
       const search = text(query.get('q'));
       const role = query.get('role') || 'all';
       const cat = query.get('cat') || '';
+      const sort = query.get('sort') || '';
       const rows = game.items.filter(item =>
         (!search || text([item.name, item.english, item.internal, item.id].join(' ')).includes(search)) &&
         (!cat || item.category === cat) &&
@@ -119,6 +132,7 @@
         (role !== 'ingredient' || item.recipeUses) &&
         (role !== 'priced' || item.referencePrice != null)
       );
+      sortItems(rows, sort);
       const page = pageOf(rows, query);
       return json({ ...page, rows: page.rows.map(item => itemSummary(item, game, matches)), meta: game.meta });
     }

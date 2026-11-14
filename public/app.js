@@ -72,9 +72,9 @@ function WikiCatalogPager({page,total,pages,onChange}){
    h('button',{type:'button',disabled:page>=pages,onClick:()=>onChange(Math.min(pages,page+1))},'Далее →'));
 }
 class GameCatalogPage extends React.Component{
- constructor(props){super(props);this.state={q:'',role:'all',cat:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],recipe:null,loading:true,error:''};this._seq=0;this._timer=null;}
+ constructor(props){super(props);this.state={q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],recipe:null,loading:true,error:''};this._seq=0;this._timer=null;}
  componentDidMount(){this.load();}
- componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
+ componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
  componentWillUnmount(){clearTimeout(this._timer);this._seq++;}
  filter(name,value){this.setState({[name]:value,page:1},()=>{clearTimeout(this._timer);this._timer=setTimeout(()=>this.load(),220);});}
  page(n){this.setState({page:n},()=>this.load());window.scrollTo({top:0,behavior:'smooth'});}
@@ -84,6 +84,7 @@ class GameCatalogPage extends React.Component{
   else{const q=new URLSearchParams({q:st.q,page:String(st.page),limit:'30'});
    if(mode==='items'&&st.role!=='all')q.set('role',st.role);
    if(mode==='items'&&st.cat)q.set('cat',st.cat);
+   if(mode==='items'&&st.sort)q.set('sort',st.sort);
    if(mode==='recipes')for(const k of ['kind','craft','level'])if(st[k])q.set(k,st[k]);
    url='/api/game/'+mode+'?'+q.toString();}
   this.setState({loading:true,error:''});
@@ -100,19 +101,26 @@ class GameCatalogPage extends React.Component{
  catalog(){
   const isItem=this.props.mode==='items',st=this.state;
   const tabs=h('div',{className:'ref-catalog-tabs'},h(Link,{to:'/game/items',className:cls('ref-tab',isItem&&'active')},'Предметы'),h(Link,{to:'/game/recipes',className:cls('ref-tab',!isItem&&'active')},'Рецепты'));
-  const itemFilter=h('div',{className:'ref-catalog-filters-extra'},
-    h('select',{value:st.cat,'aria-label':'Категория предметов',onChange:e=>this.filter('cat',e.target.value)},[h('option',{key:'',value:''},'Все категории'),...(st.meta?.itemCategories||[]).map(c=>h('option',{key:c[0],value:c[0]},c[1]+' · '+fmtCount(c[2])))]),
-    h('select',{value:st.role,'aria-label':'Фильтр предметов',onChange:e=>this.filter('role',e.target.value)},[['all','Все предметы'],['result','Результаты изготовления'],['ingredient','Ингредиенты'],['priced','С указанной ценой']].map(v=>h('option',{key:v[0],value:v[0]},v[1]))));
+  const chip=(active,onClick,label,key)=>h('button',{key,className:'extra-chip'+(active?' active':''),onClick},label);
+  const itemChips=isItem&&h('div',{className:'extra-chips ref-item-chips'},
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Категория'),
+      (st.meta?.itemCategories||[]).map(c=>chip(st.cat===c[0],()=>this.filter('cat',st.cat===c[0]?'':c[0]),(c[3]?c[3]+' ':'')+c[1]+' · '+fmtCount(c[2]),c[0]))),
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Фильтр'),
+      [['result','Результаты изготовления'],['ingredient','Ингредиенты'],['priced','Со справочной ценой']].map(v=>chip(st.role===v[0],()=>this.filter('role',st.role===v[0]?'all':v[0]),v[1],v[0]))),
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
+      [['','Название А–Я'],['name-desc','Название Я–А'],['price-desc','Цена: дорогие'],['price-asc','Цена: дешёвые'],['weight-desc','Вес: тяжёлые'],['weight-asc','Вес: лёгкие']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
+    (st.cat||st.role!=='all'||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',cat:'',role:'all',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
   const craftFilter=h('div',{className:'ref-catalog-filters-extra'},
     h('select',{value:st.craft,'aria-label':'Ремесло',onChange:e=>this.filter('craft',e.target.value)},[h('option',{key:'',value:''},'Все ремёсла'),...Object.entries(st.meta?.craftNames||{smithing:'Кузнечное дело',alchemy:'Алхимия'}).map(([k,v])=>h('option',{key:k,value:k},v))]),
     h('select',{value:st.level,'aria-label':'Уровень',onChange:e=>this.filter('level',e.target.value)},[h('option',{key:'',value:''},'Все уровни'),...Array.from({length:10},(_,i)=>h('option',{key:i+1,value:String(i+1)},'Уровень '+(i+1)))]),
     h('select',{value:st.kind,'aria-label':'Тип рецепта',onChange:e=>this.filter('kind',e.target.value)},[h('option',{key:'',value:''},'Все типы'),...Object.entries(kindLabels).map(([k,v])=>h('option',{key:k,value:k},v))]));
-  const filters=h('div',{className:'ref-catalog-filters'},h(SearchInput,{value:st.q,onChange:v=>this.filter('q',v),placeholder:isItem?'Поиск предметов...':'Поиск рецептов...'}),isItem?itemFilter:craftFilter);
+  const filters=h('div',{className:'ref-catalog-filters'},h(SearchInput,{value:st.q,onChange:v=>this.filter('q',v),placeholder:isItem?'Поиск предметов...':'Поиск рецептов...'}),isItem?null:craftFilter);
   const cardGrid=st.rows.length?h('div',{className:'game-results ref-card-gallery'},st.rows.map(r=>isItem?this.itemRow(r):this.recipeRow(r))):h('div',{className:'game-placeholder'},'Ничего не найдено. Измените условия поиска.');
   const results=st.error?this.failed():st.loading&&!st.rows.length?this.loading():h('div',{className:'ref-catalog-results'},cardGrid,h(WikiCatalogPager,{page:st.page,total:st.total,pages:st.pages,onChange:n=>this.page(n)}));
   return h('div',{className:'page game-page ref-catalog-page'},
     this.intro(isItem?'Каталог предметов':'Каталог рецептов',isItem?'Предметы KCD2RP — изображения, названия и игровые идентификаторы.':'Рецепты игрового мира: предметы, необходимые материалы и навыки.',''),
     h('div',{className:'ref-catalog-toolbar'},tabs,filters),
+    itemChips,
     h('div',{className:'ref-catalog-count'},'Найдено: ',fmtCount(st.total),' · ',isItem?'Предметы':'Рецепты'),
     results);
  }

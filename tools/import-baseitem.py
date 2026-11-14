@@ -100,7 +100,13 @@ if not ANIMS_ONLY:
         cat_counts[i['category']][1] += 1
     meta = catalog['meta']
     meta['itemCount'] = len(merged)
-    meta['itemCategories'] = [[slug, ru, n] for slug, (ru, n) in sorted(cat_counts.items(), key=lambda kv: -kv[1][1])]
+    CAT_ORDER = ['melee', 'ranged', 'ammo', 'armor', 'horse', 'alchemy', 'food', 'books',
+                 'dice', 'valuables', 'keys', 'tools', 'materials', 'household', 'world', 'misc']
+    CAT_ICONS = {'alchemy': '🌿', 'ammo': '🏹', 'armor': '🛡️', 'melee': '⚔️', 'ranged': '🔫',
+                 'horse': '🐎', 'food': '🍖', 'books': '📜', 'dice': '🎲', 'materials': '🔨',
+                 'valuables': '💎', 'keys': '🗝️', 'tools': '🔧', 'household': '🏠', 'world': '🗺️', 'misc': '🎒'}
+    meta['itemCategories'] = [[slug, cat_counts[slug][0], cat_counts[slug][1], CAT_ICONS[slug]]
+                              for slug in CAT_ORDER if slug in cat_counts]
     meta['baseItemSource'] = 'KCD2BaseItem (markuzewb) — полная база предметов и игровых иконок KCD2'
     meta['baseItemImportedAt'] = '2026-11-14T00:00:00Z'
     catalog['items'] = merged
