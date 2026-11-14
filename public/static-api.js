@@ -47,6 +47,17 @@
     if (cmp) rows.sort(cmp);
     return rows;
   }
+  function sortRecipes(rows, sort) {
+    const cmp = {
+      'name-desc': (a, b) => String(b.name).localeCompare(String(a.name), 'ru'),
+      'level-desc': (a, b) => (b.level ?? -1) - (a.level ?? -1),
+      'level-asc': (a, b) => (a.level ?? Infinity) - (b.level ?? Infinity),
+      'ingr-desc': (a, b) => b.ingredients.length - a.ingredients.length,
+      'ingr-asc': (a, b) => a.ingredients.length - b.ingredients.length
+    }[sort];
+    if (cmp) rows.sort(cmp);
+    return rows;
+  }
   function itemImage(id, game, matches) {
     const key = String(id || '').toLowerCase();
     return game.media?.[key] || matches.items[key]?.path || null;
@@ -142,11 +153,14 @@
       const craft = query.get('craft') || '';
       const kind = query.get('kind') || '';
       const level = query.get('level') || '';
+      const sort = query.get('sort') || '';
       const rows = game.recipes.filter(recipe =>
         (!search || text([recipe.id, recipe.name, recipe.craft, recipe.craftName, ...recipe.ingredients.map(item => item.name), ...recipe.outputs.map(item => item.name)].join(' ')).includes(search)) &&
         (!craft || recipe.craft === craft) && (!kind || recipe.kind === kind) && (!level || String(recipe.level) === level)
       );
-      return json({ ...pageOf(rows, query), rows: pageOf(rows, query).rows.map(recipe => recipeSummary(recipe, game, matches)), meta: game.meta });
+      sortRecipes(rows, sort);
+      const page = pageOf(rows, query);
+      return json({ ...page, rows: page.rows.map(recipe => recipeSummary(recipe, game, matches)), meta: game.meta });
     }
     const item = path.match(/^\/api\/game\/items\/([^/]+)$/);
     if (item) {

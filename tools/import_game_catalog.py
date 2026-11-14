@@ -59,6 +59,20 @@ def normalized_id(value):
     return safe_string(value).lower()
 
 
+CRAFT_ORDER = ['smithing', 'armour', 'tailoring', 'bowyer', 'alchemy', 'cooking', 'brewing', 'jewellery', 'carpentry']
+CRAFT_ICONS = {'smithing': '⚒️', 'armour': '🛡️', 'tailoring': '🧵', 'bowyer': '🏹', 'alchemy': '🧪',
+               'cooking': '🍲', 'brewing': '🍺', 'jewellery': '💍', 'carpentry': '🪚'}
+
+
+def recipe_crafts(recipes, craft_names):
+    counts = {}
+    for recipe in recipes:
+        craft = recipe.get('craft')
+        counts[craft] = counts.get(craft, 0) + 1
+    ordered = CRAFT_ORDER + sorted(c for c in counts if c not in CRAFT_ORDER)
+    return [[c, craft_names.get(c, c), counts[c], CRAFT_ICONS.get(c, '🛠️')] for c in ordered if counts.get(c)]
+
+
 def generate(gamemode, output, source_label=None):
     game = pathlib.Path(gamemode)
     namesfile = game / NAME_FILE
@@ -185,6 +199,7 @@ def generate(gamemode, output, source_label=None):
         'sourceHashes': sha,
         'itemCount': len(items), 'recipeCount': len(recipes), 'recipeKinds': kind_counts,
         'craftNames': source.get('craftNames', {}),
+        'recipeCrafts': recipe_crafts(recipes, source.get('craftNames', {})),
         'nativePrices': sum('referencePrice' in x for x in items),
     }
     catalog = {'meta': meta, 'items': items, 'recipes': recipes}

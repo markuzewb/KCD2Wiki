@@ -86,7 +86,7 @@ class GameCatalogPage extends React.Component{
    if(mode==='items'&&st.role!=='all')q.set('role',st.role);
    if(mode==='items'&&st.cat)q.set('cat',st.cat);
    if(mode==='items'&&st.sort)q.set('sort',st.sort);
-   if(mode==='recipes')for(const k of ['kind','craft','level'])if(st[k])q.set(k,st[k]);
+   if(mode==='recipes')for(const k of ['kind','craft','level','sort'])if(st[k])q.set(k,st[k]);
    url='/api/game/'+mode+'?'+q.toString();}
   this.setState({loading:true,error:''});
   try{const res=await wikiFetch(url);const body=await res.json();if(!res.ok)throw Error(body.error||'Не удалось открыть каталог');if(this._seq!==seq)return;
@@ -111,17 +111,24 @@ class GameCatalogPage extends React.Component{
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
       [['','Название А–Я'],['name-desc','Название Я–А'],['price-desc','Цена: дорогие'],['price-asc','Цена: дешёвые'],['weight-desc','Вес: тяжёлые'],['weight-asc','Вес: лёгкие']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
     (st.cat||st.role!=='all'||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',cat:'',role:'all',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
-  const craftFilter=h('div',{className:'ref-catalog-filters-extra'},
-    h('select',{value:st.craft,'aria-label':'Ремесло',onChange:e=>this.filter('craft',e.target.value)},[h('option',{key:'',value:''},'Все ремёсла'),...Object.entries(st.meta?.craftNames||{smithing:'Кузнечное дело',alchemy:'Алхимия'}).map(([k,v])=>h('option',{key:k,value:k},v))]),
-    h('select',{value:st.level,'aria-label':'Уровень',onChange:e=>this.filter('level',e.target.value)},[h('option',{key:'',value:''},'Все уровни'),...Array.from({length:10},(_,i)=>h('option',{key:i+1,value:String(i+1)},'Уровень '+(i+1)))]),
-    h('select',{value:st.kind,'aria-label':'Тип рецепта',onChange:e=>this.filter('kind',e.target.value)},[h('option',{key:'',value:''},'Все типы'),...Object.entries(kindLabels).map(([k,v])=>h('option',{key:k,value:k},v))]));
-  const filters=h('div',{className:'ref-catalog-filters'},h(SearchInput,{value:st.q,onChange:v=>this.filter('q',v),placeholder:isItem?'Поиск предметов...':'Поиск рецептов...'}),isItem?null:craftFilter);
+  const crafts=st.meta?.recipeCrafts||Object.entries(st.meta?.craftNames||{}).map(([k,v])=>[k,v,0,'🛠️']);
+  const recipeChips=!isItem&&h('div',{className:'extra-chips ref-item-chips'},
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Ремесло'),
+      crafts.map(c=>chip(st.craft===c[0],()=>this.filter('craft',st.craft===c[0]?'':c[0]),(c[3]?c[3]+' ':'')+c[1]+(c[2]?' · '+fmtCount(c[2]):''),c[0]))),
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Уровень'),
+      Array.from({length:10},(_,i)=>String(i+1)).map(v=>chip(st.level===v,()=>this.filter('level',st.level===v?'':v),v,'lvl'+v))),
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Тип'),
+      Object.entries(kindLabels).map(([k,v])=>chip(st.kind===k,()=>this.filter('kind',st.kind===k?'':k),v,k))),
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
+      [['','Название А–Я'],['name-desc','Название Я–А'],['level-asc','Уровень: низкие'],['level-desc','Уровень: высокие'],['ingr-asc','Ингредиенты: меньше'],['ingr-desc','Ингредиенты: больше']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
+    (st.craft||st.level||st.kind||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',craft:'',level:'',kind:'',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
+  const filters=h('div',{className:'ref-catalog-filters'},h(SearchInput,{value:st.q,onChange:v=>this.filter('q',v),placeholder:isItem?'Поиск предметов...':'Поиск рецептов...'}));
   const cardGrid=st.rows.length?h('div',{className:'game-results ref-card-gallery'},st.rows.map(r=>isItem?this.itemRow(r):this.recipeRow(r))):h('div',{className:'game-placeholder'},'Ничего не найдено. Измените условия поиска.');
   const results=st.error?this.failed():st.loading&&!st.rows.length?this.loading():h('div',{className:'ref-catalog-results'},cardGrid,h(WikiCatalogPager,{page:st.page,total:st.total,pages:st.pages,onChange:n=>this.page(n)}));
   return h('div',{className:'page game-page ref-catalog-page'},
     this.intro(isItem?'Каталог предметов':'Каталог рецептов',isItem?'Предметы KCD2RP — изображения, названия и игровые идентификаторы.':'Рецепты игрового мира: предметы, необходимые материалы и навыки.',''),
     h('div',{className:'ref-catalog-toolbar'},tabs,filters),
-    itemChips,
+    itemChips||recipeChips,
     h('div',{className:'ref-catalog-count'},'Найдено: ',fmtCount(st.total),' · ',isItem?'Предметы':'Рецепты'),
     results);
  }

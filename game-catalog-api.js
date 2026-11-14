@@ -108,15 +108,21 @@ async function handle(req,res,u,ctx){
   if(pathname==='/api/game/recipes'){
     const q=searchText(u.searchParams.get('q'));const craft=u.searchParams.get('craft')||'';
     const kind=u.searchParams.get('kind')||'';const level=u.searchParams.get('level')||'';
+    const sort=u.searchParams.get('sort')||'';
     let rows=[];
     for(let i=0;i<d.recipes.length;i++){
       const r=d.recipes[i];if(q&&!d._recipesIndex[i].includes(q))continue;
       if(craft&&r.craft!==craft)continue;
       if(kind&&r.kind!==kind)continue;
       if(level&&String(r.level)!==level)continue;
-      rows.push(recipeSummary(r));
+      rows.push(r);
     }
-    return answer(res,200,{...pageOf(rows,u.searchParams),meta:basicMeta(d)}),true;
+    const cmp={'name-desc':(a,b)=>String(b.name).localeCompare(String(a.name),'ru'),
+      'level-desc':(a,b)=>(b.level??-1)-(a.level??-1),'level-asc':(a,b)=>(a.level??Infinity)-(b.level??Infinity),
+      'ingr-desc':(a,b)=>b.ingredients.length-a.ingredients.length,'ingr-asc':(a,b)=>a.ingredients.length-b.ingredients.length}[sort];
+    if(cmp)rows.sort(cmp);
+    const page=pageOf(rows,u.searchParams);
+    return answer(res,200,{...page,rows:page.rows.map(recipeSummary),meta:basicMeta(d)}),true;
   }
   return answer(res,404,{error:'Каталог не найден'}),true;
  }catch(e){
