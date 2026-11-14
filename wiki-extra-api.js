@@ -10,11 +10,15 @@ const IMAGES=path.join(DATA,'media','items');
 const MAPS_DEFAULT=path.join(ROOT,'catalog','map-markers.json');
 const MAPS_OVERRIDE=path.join(DATA,'map-markers.json');
 const animData=JSON.parse(fs.readFileSync(path.join(ROOT,'catalog','animations.json'),'utf8'));
-const animations=animData.clips.map(x=>({clip:String(x.clip),families:x.families||[],fragments:x.fragments||[],ru:x.ru||'',desc:x.desc||'',phase:x.phase||'',cat:x.cat||'',pose:x.pose||'',kind:x.kind||''}));
-const animIndex=animations.map(x=>[x.clip,x.ru,x.desc,...x.families,...x.fragments].join(' ').toLocaleLowerCase('ru-RU'));
+const animations=animData.clips.map(x=>({clip:String(x.clip),families:x.families||[],fragments:x.fragments||[],ru:x.ru||'',desc:x.desc||'',phase:x.phase||'',cat:x.cat||'',catIcon:x.catIcon||'',sub:x.sub||'',pose:x.pose||'',kind:x.kind||'',tags:x.tags||[]}));
+const animIndex=animations.map(x=>[x.clip,x.ru,x.desc,...x.tags,...x.families,...x.fragments].join(' ').toLocaleLowerCase('ru-RU'));
 const byClip=new Map(animations.map(x=>[x.clip,x]));
 const familyCounts={};for(const a of animations)for(const f of a.families)familyCounts[f]=(familyCounts[f]||0)+1;
 const animCatCounts={};for(const a of animations)if(a.cat)animCatCounts[a.cat]=(animCatCounts[a.cat]||0)+1;
+const animKindCounts={};for(const a of animations)if(a.kind)animKindCounts[a.kind]=(animKindCounts[a.kind]||0)+1;
+const animPhaseCounts={};for(const a of animations)if(a.phase)animPhaseCounts[a.phase]=(animPhaseCounts[a.phase]||0)+1;
+const animPoseCounts={};for(const a of animations)if(a.pose)animPoseCounts[a.pose]=(animPoseCounts[a.pose]||0)+1;
+const animCatalog=animData.catalog||[];
 const MAP_LABELS=JSON.parse(fs.readFileSync(path.join(ROOT,'catalog','map-labels.json'),'utf8')).labels||{};
 const REGION_INFO={
  trosky:{title:'Троски',rows:4,cols:4,tileSize:1024,source:'Карты игрового режима KCD2RP',labels:MAP_LABELS.trosky||[]},
@@ -85,17 +89,23 @@ async function handle(req,res,u,ctx){
   if(icons.handle(req,res,u))return true;
   if(p.startsWith('/api/animations')){
    if(req.method!=='GET')return J(res,405,{error:'Метод не поддерживается'}),true;
-   if(p==='/api/animations/meta')return J(res,200,{count:animations.length,families:familyCounts,cats:animCatCounts,source:animData.source,imported:animData.imported}),true;
+   if(p==='/api/animations/meta')return J(res,200,{count:animations.length,families:familyCounts,cats:animCatCounts,catalog:animCatalog,kinds:animKindCounts,phases:animPhaseCounts,poses:animPoseCounts,source:animData.source,imported:animData.imported}),true;
    const detail=p.match(/^\/api\/animations\/([a-zA-Z0-9_.-]{1,90})$/);
    if(detail){const row=byClip.get(detail[1]);return J(res,row?200:404,row?{animation:row}:{error:'Анимация не найдена'}),true;}
    if(p==='/api/animations'){
     const q=str(u.searchParams.get('q'),90).toLocaleLowerCase('ru-RU'),family=str(u.searchParams.get('family'),50),cat=str(u.searchParams.get('cat'),60);
+    const sub=str(u.searchParams.get('sub'),80),kind=str(u.searchParams.get('kind'),20),phase=str(u.searchParams.get('phase'),40),pose=str(u.searchParams.get('pose'),20);
     const page=limit(u.searchParams.get('page'),1,10000,1),per=limit(u.searchParams.get('limit'),1,80,30);
     const indices=[];
     for(let i=0;i<animations.length;i++){
+     const a=animations[i];
      if(q&&!animIndex[i].includes(q))continue;
-     if(family&&!animations[i].families.includes(family))continue;
-     if(cat&&animations[i].cat!==cat)continue;
+     if(family&&!a.families.includes(family))continue;
+     if(cat&&a.cat!==cat)continue;
+     if(sub&&a.sub!==sub)continue;
+     if(kind&&a.kind!==kind)continue;
+     if(phase&&a.phase!==phase)continue;
+     if(pose&&a.pose!==pose)continue;
      indices.push(i);
     }
     return J(res,200,{total:indices.length,pages:Math.max(1,Math.ceil(indices.length/per)),page,limit:per,

@@ -13,33 +13,75 @@ const familyLabel=x=>familyNames[x]||x;
 const iconFor={settlement:'⌂',landmark:'◆',transport:'♞',other:'✦'};
 const errorMessage=async r=>{const body=await r.json();if(!r.ok)throw Error(body.error||'Сервер временно недоступен');return body;};
 
+const poseNames={stand:'Стоя',sit:'Сидя',lie:'Лёжа',sleep:'Сон',kneel:'На коленях',crouch:'Присев',horse:'Верхом',lean:'Опираясь'};
+const kindNames={static:'Стойка',move:'Движение',action:'Действие'};
+const phaseShort={'Ожидание / поза':'Ожидание','Цикл':'Цикл','Вход / начало':'Начало','Действие / переход':'Действие','Выход / завершение':'Завершение','Вариант':'Вариант','Переход':'Переход'};
+const ANIM_EMPTY={q:'',family:'',cat:'',sub:'',kind:'',phase:'',pose:''};
+const capRu=s=>s?s.charAt(0).toLocaleUpperCase('ru')+s.slice(1):s;
+
 class Animations extends React.Component{
- constructor(props){super(props);this.state={q:'',family:'',cat:'',page:1,rows:[],total:0,pages:1,meta:null,detail:null,loading:true,error:''};this.seq=0;this.timer=null;}
+ constructor(props){super(props);this.state={...ANIM_EMPTY,page:1,rows:[],total:0,pages:1,meta:null,detail:null,loading:true,error:''};this.seq=0;this.timer=null;}
  componentDidMount(){wikiFetch('/api/animations/meta').then(errorMessage).then(meta=>this.setState({meta})).catch(()=>{});this.search();if(this.props.clip)this.detail(this.props.clip);}
  componentDidUpdate(prev){if(prev.clip!==this.props.clip){if(this.props.clip)this.detail(this.props.clip);else this.setState({detail:null});}}
  componentWillUnmount(){clearTimeout(this.timer);this.seq++;}
- search(){const id=++this.seq,params=new URLSearchParams({q:this.state.q,family:this.state.family,cat:this.state.cat,page:String(this.state.page),limit:'30'});
+ search(){const id=++this.seq,s=this.state,params=new URLSearchParams({q:s.q,family:s.family,cat:s.cat,sub:s.sub,kind:s.kind,phase:s.phase,pose:s.pose,page:String(s.page),limit:'30'});
   this.setState({loading:true,error:''});wikiFetch('/api/animations?'+params).then(errorMessage).then(data=>{if(id!==this.seq)return;this.setState({rows:data.rows,total:data.total,pages:data.pages,loading:false});}).catch(err=>{if(id===this.seq)this.setState({loading:false,error:err.message})});}
- change(key,value){const update={[key]:value,page:1};this.setState(update,()=>{clearTimeout(this.timer);this.timer=setTimeout(()=>this.search(),key==='q'?180:0);});}
+ change(key,value){const update={[key]:value,page:1};if(key==='cat')update.sub='';this.setState(update,()=>{clearTimeout(this.timer);this.timer=setTimeout(()=>this.search(),key==='q'?180:0);});}
+ toggle(key,value){this.change(key,this.state[key]===value?'':value);}
+ resetFilters(){this.setState({...ANIM_EMPTY,page:1},()=>this.search());}
  page(n){this.setState({page:n},()=>this.search());}
  detail(clip){this.setState({detail:null,error:''});wikiFetch('/api/animations/'+encodeURIComponent(clip)).then(errorMessage).then(d=>this.setState({detail:d.animation})).catch(e=>this.setState({error:e.message}));}
  copy(clip){if(navigator.clipboard?.writeText)navigator.clipboard.writeText(clip).catch(()=>{});else{const input=document.createElement('textarea');input.value=clip;document.body.append(input);input.select();document.execCommand('copy');input.remove()}}
- render(){const s=this.state,a=s.detail;
-  const head=h('div',{className:'game-title'},h('span',{className:'page-overline'},'KCD2 / АНИМАЦИИ NPC'),h('h1',{},'Библиотека анимаций'),h('p',{},'Справочник клипов из каталога анимаций KCD:MP. Поиск по внутреннему названию, семейству и фрагментам. Доступность конкретной анимации зависит от модели и состояния персонажа.'));
+ chips(label,map,key){const s=this.state;return h('div',{className:'extra-chip-group',key:key},h('span',{className:'extra-chip-label'},label),Object.entries(map).map(([value,name])=>
+   h('button',{key:value,className:'extra-chip'+(s[key]===value?' active':''),onClick:()=>this.toggle(key,value)},name)));}
+ render(){const s=this.state,a=s.detail,catalog=s.meta?.catalog||[];
+  const activeCat=catalog.find(c=>c.name===s.cat);
+  const filtersOn=Object.keys(ANIM_EMPTY).some(k=>s[k]);
+  const head=h('div',{className:'game-title'},h('span',{className:'page-overline'},'KCD2 / АНИМАЦИИ NPC'),h('h1',{},'Библиотека анимаций'),h('p',{},'Все 9 006 клипов KCD2 с русскими названиями и описаниями. Поиск по названию и внутреннему коду, фильтры по категории, типу, фазе и позе — как в игровой базе.'));
   return h('div',{className:'page extra-page'},head,
-    h('div',{className:'extra-kpis'},h('div',{},h('small',{},'КЛИПОВ В КАТАЛОГЕ'),h('strong',{},fmt(s.meta?.count||9006))),h('div',{},h('small',{},'СЕМЕЙСТВ'),h('strong',{},fmt(Object.keys(s.meta?.families||familyNames).length))),h('div',{},h('small',{},'ПО НАСТРОЙКАМ'),h('strong',{},fmt(s.total)))),
+    h('div',{className:'extra-kpis'},h('div',{},h('small',{},'КЛИПОВ В КАТАЛОГЕ'),h('strong',{},fmt(s.meta?.count||9006))),h('div',{},h('small',{},'КАТЕГОРИЙ'),h('strong',{},fmt(catalog.length||37))),h('div',{},h('small',{},'ПО НАСТРОЙКАМ'),h('strong',{},fmt(s.total)))),
     h('div',{className:'extra-tabs'},h('a',{href:wikiUrl('/game/items'),onClick:e=>{e.preventDefault();navigate('/game/items')}},'Предметы'),h('a',{href:wikiUrl('/game/recipes'),onClick:e=>{e.preventDefault();navigate('/game/recipes')}},'Рецепты'),h('span',{className:'active'},'Анимации NPC')),
-    h('div',{className:'extra-filters'},h('label',{},'Поиск клипа',h('input',{value:s.q,placeholder:'Например: groom, idle, sit, guard…',onChange:e=>this.change('q',e.target.value),'aria-label':'Поиск анимаций'})),h('label',{},'Семейство',h('select',{value:s.family,onChange:e=>this.change('family',e.target.value)},h('option',{value:''},'Все семейства'),Object.entries(s.meta?.families||{}).map(([k,n])=>h('option',{value:k,key:k},familyLabel(k)+' · '+fmt(n))))),h('label',{},'Категория',h('select',{value:s.cat,onChange:e=>this.change('cat',e.target.value)},h('option',{value:''},'Все категории'),Object.entries(s.meta?.cats||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>h('option',{value:k,key:k},k+' · '+fmt(n))))),h('span',{className:'extra-filter-count'},fmt(s.total)+' найдено')),
+    h('div',{className:'extra-filters'},
+      h('label',{},'Поиск клипа',h('input',{value:s.q,placeholder:'Например: кузнец, молитва, idle, sit…',onChange:e=>this.change('q',e.target.value),'aria-label':'Поиск анимаций'})),
+      h('label',{},'Категория',h('select',{value:s.cat,onChange:e=>this.change('cat',e.target.value)},h('option',{value:''},'Все категории'),catalog.map(c=>h('option',{value:c.name,key:c.name},(c.icon?c.icon+' ':'')+c.name+' · '+fmt(c.count))))),
+      h('label',{},'Подкатегория',h('select',{value:s.sub,disabled:!activeCat,onChange:e=>this.change('sub',e.target.value)},h('option',{value:''},activeCat?'Все подкатегории':'Сначала категория'),(activeCat?.subs||[]).map(x=>h('option',{value:x[0],key:x[0]},x[0]+' · '+fmt(x[1]))))),
+      h('label',{},'Семейство',h('select',{value:s.family,onChange:e=>this.change('family',e.target.value)},h('option',{value:''},'Все семейства'),Object.entries(s.meta?.families||{}).map(([k,n])=>h('option',{value:k,key:k},familyLabel(k)+' · '+fmt(n))))),
+      h('span',{className:'extra-filter-count'},fmt(s.total)+' найдено')),
+    h('div',{className:'extra-chips'},
+      this.chips('Тип',kindNames,'kind'),
+      this.chips('Фаза',Object.fromEntries(Object.entries(phaseShort).map(([full,short])=>[full,short])),'phase'),
+      this.chips('Поза',poseNames,'pose'),
+      filtersOn&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.resetFilters()},'✕ Сбросить всё')),
     s.error&&h('div',{className:'extra-alert'},s.error),
-    this.props.clip&&h('section',{className:'extra-animation-detail'},h('button',{className:'extra-back',onClick:()=>navigate('/animations')},'← Ко всем анимациям'),a?h('div',{},h('span',{className:'page-overline'},'КАРТОЧКА АНИМАЦИИ'),h('h2',{},a.ru||a.clip),a.ru&&h('p',{className:'extra-clip-code'},h('code',{},a.clip)),a.desc&&h('p',{},a.desc),h('div',{className:'extra-tags'},[a.cat&&h('span',{key:'cat'},a.cat),a.phase&&h('span',{key:'ph'},a.phase),a.pose&&h('span',{key:'pose'},a.pose),...a.families.map(x=>h('span',{key:x},familyLabel(x)))]),h('p',{},'Фрагменты: '+(a.fragments.length?a.fragments.join(' · '):'не указаны')),h('button',{className:'extra-primary',onClick:()=>this.copy(a.clip)},'Скопировать ID клипа')):h('p',{},'Загрузка карточки…')),
+    this.props.clip&&h('section',{className:'extra-animation-detail'},h('button',{className:'extra-back',onClick:()=>navigate('/animations')},'← Ко всем анимациям'),a?h('div',{},
+      h('span',{className:'page-overline'},'КАРТОЧКА АНИМАЦИИ'),
+      h('h2',{},(a.catIcon?a.catIcon+' ':'')+capRu(a.ru||a.clip)),
+      h('p',{className:'extra-clip-code'},h('code',{},a.clip)),
+      a.desc&&h('p',{},a.desc),
+      h('div',{className:'extra-tags'},[
+        a.cat&&h('span',{key:'cat'},(a.catIcon||'')+' '+a.cat),a.sub&&h('span',{key:'sub'},a.sub),
+        a.kind&&h('span',{key:'kind'},kindNames[a.kind]||a.kind),a.phase&&h('span',{key:'ph'},a.phase),
+        a.pose&&h('span',{key:'pose'},poseNames[a.pose]||a.pose),...a.families.map(x=>h('span',{key:x},familyLabel(x)))]),
+      (a.tags||[]).length?h('p',{className:'extra-anim-tagline'},'Метки: '+a.tags.join(' · ')):null,
+      h('p',{},'Фрагменты: '+(a.fragments.length?a.fragments.join(' · '):'не указаны')),
+      h('button',{className:'extra-primary',onClick:()=>this.copy(a.clip)},'Скопировать ID клипа')):h('p',{},'Загрузка карточки…')),
     h('div',{className:'extra-animations-list'},
-      h('div',{className:'extra-list-header'},h('span',{},'КЛИП / ВНУТРЕННЕЕ НАЗВАНИЕ'),h('span',{},'СЕМЕЙСТВО'),h('span',{},'ДЕЙСТВИЕ')),
+      h('div',{className:'extra-list-header'},h('span',{},'АНИМАЦИЯ / КЛИП'),h('span',{},'КАТЕГОРИЯ'),h('span',{},'ДЕЙСТВИЕ')),
       s.loading?h('div',{className:'extra-empty'},'Загрузка анимаций…'):s.rows.length?s.rows.map((row,i)=>h('div',{className:'extra-animation-row',key:row.clip},
-        h('button',{className:'extra-animation-name',title:'Открыть карточку',onClick:()=>navigate('/animations/'+encodeURIComponent(row.clip))},h('span',{className:'extra-row-num'},String((s.page-1)*30+i+1).padStart(3,'0')),h('code',{},row.clip),h('small',{},row.ru||row.fragments[0]||'—')),
-        h('span',{className:'extra-family'},row.families.map(familyLabel).join(', ')),
+        h('button',{className:'extra-animation-name',title:'Открыть карточку',onClick:()=>navigate('/animations/'+encodeURIComponent(row.clip))},
+          h('span',{className:'extra-row-num'},String((s.page-1)*30+i+1).padStart(3,'0')),
+          h('span',{className:'extra-anim-main'},
+            h('strong',{className:'extra-anim-ru'},row.ru||row.clip),
+            h('code',{},row.clip),
+            h('span',{className:'extra-anim-badges'},[
+              row.sub&&h('em',{key:'sub'},row.sub),
+              row.kind&&h('em',{key:'kind'},kindNames[row.kind]||row.kind),
+              row.phase&&h('em',{key:'ph'},phaseShort[row.phase]||row.phase),
+              row.pose&&h('em',{key:'pose'},poseNames[row.pose]||row.pose)]))),
+        h('span',{className:'extra-family',title:row.cat||''},(row.catIcon?row.catIcon+' ':'')+(row.cat||row.families.map(familyLabel).join(', '))),
         h('button',{className:'extra-copy',onClick:()=>this.copy(row.clip),title:'Скопировать название анимации'},'⧉ Копировать'))):h('div',{className:'extra-empty'},'Совпадений не найдено')),
     h('nav',{className:'extra-pager','aria-label':'Страницы анимаций'},h('button',{disabled:s.page<=1,onClick:()=>this.page(s.page-1)},'← Назад'),h('span',{},'Страница '+s.page+' из '+s.pages),h('button',{disabled:s.page>=s.pages,onClick:()=>this.page(s.page+1)},'Вперёд →')),
-    h('p',{className:'extra-source'},'Источник: каталог animations.json игрового редактора NPC · импорт '+(s.meta?.imported||'2026-10-23')+'. Указаны внутренние имена, не гарантированные действия для каждой модели.'));
+    h('p',{className:'extra-source'},'Источник: каталог KCD:MP + база KCD2BaseItem (русские названия, описания и классификация) · импорт '+(s.meta?.imported||'2026-10-23')+'. Указаны внутренние имена, не гарантированные действия для каждой модели.'));
  }
 }
 
