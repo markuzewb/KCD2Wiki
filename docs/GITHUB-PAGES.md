@@ -18,9 +18,9 @@ npm run preview:pages
 
 ## Автоматическая публикация
 
-Workflow `.github/workflows/pages.yml` запускается при изменении проекта в ветке `arena/cc31bd38-kcd2wiki` или `main`, а также вручную через **Actions → Deploy Wiki to GitHub Pages → Run workflow**.
+Workflow `.github/workflows/pages.yml` запускается при изменении проекта в ветке `main`, а также вручную через **Actions → Deploy Wiki to GitHub Pages → Run workflow**.
 
-В **Settings → Pages → Build and deployment** должен быть выбран источник **GitHub Actions**. Пока репозиторий приватный, workflow пропускается без ошибки. После публикации репозитория workflow пробует включить Pages через `actions/configure-pages`; видимость репозитория он не меняет.
+Однократная настройка репозитория: **Settings → Pages → Build and deployment → Source: GitHub Actions**. GitHub не позволяет workflow-токену самому создать Pages-сайт (`actions/configure-pages` с `enablement: true` требует прав администратора), поэтому workflow проверяет, что Pages включён, и при необходимости падает с понятной ссылкой на настройки. Пока репозиторий приватный, workflow пропускается без ошибки; видимость репозитория он не меняет.
 
 После успешного задания `deploy` адрес появится в environment `github-pages` и в настройках Pages. Для репозитория `markuzewb/KCD2Wiki` ожидаемый адрес: `https://markuzewb.github.io/KCD2Wiki/`.
 
