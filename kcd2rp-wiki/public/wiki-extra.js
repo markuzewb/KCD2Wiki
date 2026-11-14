@@ -3,7 +3,7 @@
 'use strict';
 const WIKI_BASE=String(window.KCD2RP_WIKI_BASE||'').replace(/\/+$/,'');
 const wikiUrl=u=>typeof u==='string'&&u.startsWith('/')&&!u.startsWith('//')?WIKI_BASE+u:u;
-const wikiFetch=(u,options)=>fetch(wikiUrl(u),options);
+const wikiFetch=(u,options)=>window.KCD2RPStaticAPI?window.KCD2RPStaticAPI.fetch(u,options):fetch(wikiUrl(u),options);
 const h=React.createElement;
 const navigate=href=>window.KCD2RPNavigate?window.KCD2RPNavigate(href):window.location.assign(wikiUrl(href));
 const fmt=n=>Number(n||0).toLocaleString('ru-RU');
