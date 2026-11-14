@@ -44,10 +44,20 @@ class Animations extends React.Component{
 }
 
 class MapPage extends React.Component{
- constructor(props){super(props);this.state={region:'trosky',meta:null,markers:[],zoom:1,tx:0,ty:0,candidate:null,placing:false,name:'',category:'settlement',chosen:null,busy:false,error:'',notice:''};this.viewport=null;this.drag=null;this.handleWheel=this.handleWheel.bind(this);this.handleResize=this.handleResize.bind(this);this.attachViewport=this.setViewport.bind(this);this.boundDown=this.down.bind(this);this.boundMove=this.move.bind(this);this.boundUp=this.up.bind(this);}
+ constructor(props){super(props);this.state={region:(props.focus&&(props.focus.region==='trosky'||props.focus.region==='kuttenberg')?props.focus.region:'trosky'),meta:null,markers:[],zoom:1,tx:0,ty:0,candidate:null,placing:false,name:'',category:'settlement',chosen:null,busy:false,error:'',notice:''};this.viewport=null;this.drag=null;this.flight=0;this.handleWheel=this.handleWheel.bind(this);this.handleResize=this.handleResize.bind(this);this.attachViewport=this.setViewport.bind(this);this.boundDown=this.down.bind(this);this.boundMove=this.move.bind(this);this.boundUp=this.up.bind(this);}
  componentDidMount(){this.load();this.handleResize();window.addEventListener('resize',this.handleResize);}
- componentWillUnmount(){window.removeEventListener('resize',this.handleResize);this.setViewport(null);}
- load(){wikiFetch('/api/maps/meta').then(errorMessage).then(res=>this.setState({meta:res,markers:res.markers||[]},()=>requestAnimationFrame(()=>this.centerMap()))).catch(e=>this.setState({error:e.message}));}
+ componentWillUnmount(){window.removeEventListener('resize',this.handleResize);cancelAnimationFrame(this.flight);this.setViewport(null);}
+ load(){wikiFetch('/api/maps/meta').then(errorMessage).then(res=>this.setState({meta:res,markers:res.markers||[]},()=>requestAnimationFrame(()=>{this.centerMap();const f=this.props.focus;if(f&&f.place)requestAnimationFrame(()=>this.flyTo(f.place));}))).catch(e=>this.setState({error:e.message}));}
+ // Smooth fly-in to a named place, like opening the in-game map on a settlement.
+ flyTo(place,zoomTarget){const region=this.state.meta?.regions?.[this.state.region];const l=(region?.labels||[]).find(x=>x.name===place);if(l)this.animateTo(l.x,l.y,zoomTarget||3.2);}
+ animateTo(nx,ny,zoomTarget){const start=this.metrics();if(!start)return;cancelAnimationFrame(this.flight);
+  const z0=this.state.zoom,t0=performance.now(),dur=1150;
+  const step=t=>{const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);
+   const zoom=z0+(zoomTarget-z0)*e,m=this.metrics();if(!m)return;
+   const scale=m.fit*zoom,tx=m.w/2-nx*m.cols*1024*scale,ty=m.h/2-ny*m.rows*1024*scale;
+   this.setState({zoom,...this.clamp(tx,ty,scale)});
+   if(k<1)this.flight=requestAnimationFrame(step);};
+  this.flight=requestAnimationFrame(step);}
  setViewport(ref){
   if(this.viewport===ref)return;
   if(this.viewport){this.viewport.removeEventListener('wheel',this.handleWheel);this.viewport.removeEventListener('pointerdown',this.boundDown);this.viewport.removeEventListener('pointermove',this.boundMove);this.viewport.removeEventListener('pointerup',this.boundUp);this.viewport.removeEventListener('pointercancel',this.boundUp);}
@@ -74,8 +84,8 @@ class MapPage extends React.Component{
   const newX=px-((px-this.state.tx)/old)*now,newY=py-((py-this.state.ty)/old)*now;
   this.setState({zoom,...this.clamp(newX,newY,now)});
  }
- handleWheel(e){e.preventDefault();const b=this.viewport.getBoundingClientRect();this.zoomAt(this.state.zoom*(e.deltaY<0?1.16:1/1.16),e.clientX-b.left,e.clientY-b.top);}
- down(e){if(e.button!==0)return;this.drag={sx:e.clientX,sy:e.clientY,tx:this.state.tx,ty:this.state.ty,moved:false};e.currentTarget.setPointerCapture(e.pointerId);}
+ handleWheel(e){e.preventDefault();cancelAnimationFrame(this.flight);const b=this.viewport.getBoundingClientRect();this.zoomAt(this.state.zoom*(e.deltaY<0?1.16:1/1.16),e.clientX-b.left,e.clientY-b.top);}
+ down(e){if(e.button!==0)return;cancelAnimationFrame(this.flight);this.drag={sx:e.clientX,sy:e.clientY,tx:this.state.tx,ty:this.state.ty,moved:false};e.currentTarget.setPointerCapture(e.pointerId);}
  move(e){if(!this.drag)return;const dx=e.clientX-this.drag.sx,dy=e.clientY-this.drag.sy;if(Math.hypot(dx,dy)>4)this.drag.moved=true;
   if(this.drag.moved)this.setState(this.clamp(this.drag.tx+dx,this.drag.ty+dy));
  }
@@ -106,7 +116,9 @@ class MapPage extends React.Component{
   const labelScale=Math.min(1/scale,5.4),showMinor=s.zoom>=1.5;
   const labelElements=(region?.labels||[]).filter(l=>showMinor||(l.kind!=='minor'&&l.kind!=='water')).map((l,i)=>
    h('div',{key:'town'+i,className:'wiki-map-town kind-'+(l.kind||'village'),style:{left:l.x*w,top:l.y*ht,transform:`scale(${labelScale}) translate(-50%,-118%)`}},
-    l.kind==='water'?h('em',{},l.name):h('span',{className:'wiki-map-town-scroll'},h('i',{},l.kind==='city'||l.kind==='town'?'⍟':l.kind==='castle'?'♜':'◆'),l.name)));
+    l.kind==='water'?h('em',{},l.name):h('span',{className:'wiki-map-town-scroll',title:'Приблизить: '+l.name,
+     onPointerDown:e=>e.stopPropagation(),onClick:e=>{e.stopPropagation();this.animateTo(l.x,l.y,Math.max(3.2,Math.min(6,s.zoom*1.45)))}},
+     h('i',{},l.kind==='city'||l.kind==='town'?'⍟':l.kind==='castle'?'♜':'◆'),l.name)));
   const stage=h('div',{className:'wiki-map-stage',style:{width:w,height:ht,transform:`translate(${s.tx}px, ${s.ty}px) scale(${scale})`}},
    assets,labelElements,markerElements,s.candidate&&h('div',{className:'wiki-map-pin candidate',style:{left:s.candidate.x*w,top:s.candidate.y*ht}},
     h('span',{},'✚'),h('small',{},s.name||'Новая точка')));
