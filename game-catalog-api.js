@@ -89,10 +89,12 @@ async function handle(req,res,u,ctx){
   if(pathname==='/api/game/items'){
     const q=searchText(u.searchParams.get('q'));const role=u.searchParams.get('role')||'all';
     const cat=u.searchParams.get('cat')||'';const sort=u.searchParams.get('sort')||'';
+    const sub=u.searchParams.get('sub')||'';
     let indices=[];
     for(let i=0;i<d.items.length;i++){
       const item=d.items[i];if(q&&!d._itemsIndex[i].includes(q))continue;
       if(cat&&item.category!==cat)continue;
+      if(sub&&(item.subName||'Прочее')!==sub)continue;
       if(role==='result'&&!item.recipeOutputs)continue;
       if(role==='ingredient'&&!item.recipeUses)continue;
       if(role==='priced'&&item.referencePrice==null)continue;

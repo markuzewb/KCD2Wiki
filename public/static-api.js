@@ -135,10 +135,12 @@
       const search = text(query.get('q'));
       const role = query.get('role') || 'all';
       const cat = query.get('cat') || '';
+      const sub = query.get('sub') || '';
       const sort = query.get('sort') || '';
       const rows = game.items.filter(item =>
         (!search || text([item.name, item.english, item.internal, item.id].join(' ')).includes(search)) &&
         (!cat || item.category === cat) &&
+        (!sub || (item.subName || 'Прочее') === sub) &&
         (role !== 'result' || item.recipeOutputs) &&
         (role !== 'ingredient' || item.recipeUses) &&
         (role !== 'priced' || item.referencePrice != null)
