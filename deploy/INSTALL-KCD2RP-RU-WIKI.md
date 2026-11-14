@@ -21,7 +21,8 @@ sudo chown -R kcd2wiki:kcd2wiki /srv/kcd2rp-wiki/data
 ## 2. Создайте секреты (только при первом запуске)
 
 ```bash
-sudo bash -c 'umask 077; cat > /etc/kcd2rp-wiki.env <<EOF
+sudo install -m 600 /dev/null /etc/kcd2rp-wiki.env
+sudo tee /etc/kcd2rp-wiki.env >/dev/null <<EOF
 HOST=127.0.0.1
 PORT=3082
 WIKI_BASE_PATH=/wiki
@@ -29,7 +30,7 @@ NODE_ENV=production
 WIKI_ADMIN_USER=admin
 WIKI_ADMIN_PASSWORD=$(openssl rand -hex 24)
 WIKI_SESSION_SECRET=$(openssl rand -hex 32)
-EOF'
+EOF
 ```
 
 Пароль редактора находится в `/etc/kcd2rp-wiki.env` (смотрите только локально, никому не пересылайте).

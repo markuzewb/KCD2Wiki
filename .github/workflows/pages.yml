@@ -5,9 +5,6 @@ on:
     branches:
       - arena/cc31bd38-kcd2wiki
       - main
-    paths:
-      - 'kcd2rp-wiki/**'
-      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -21,10 +18,10 @@ concurrency:
 
 jobs:
   build:
+    # GitHub Pages for private repositories requires a paid plan.
+    # Skip cleanly while this repository is private.
+    if: ${{ github.event.repository.private == false }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: kcd2rp-wiki
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,14 +30,14 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: kcd2rp-wiki/package-lock.json
+          cache-dependency-path: package-lock.json
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
       - name: Install locked dependencies
         run: npm ci
-      - name: Check JavaScript
+      - name: Check JavaScript and secrets
         run: npm run check
       - name: Build static site
         run: npm run build:pages
@@ -49,10 +46,11 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: kcd2rp-wiki/dist/pages
+          path: dist/pages
 
   deploy:
     needs: build
+    if: ${{ github.event.repository.private == false }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

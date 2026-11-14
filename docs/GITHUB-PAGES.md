@@ -7,7 +7,6 @@
 Требуется Node.js 18+; внешние npm-зависимости не нужны.
 
 ```bash
-cd kcd2rp-wiki
 npm ci
 npm run check
 npm run build:pages
@@ -21,7 +20,7 @@ npm run preview:pages
 
 Workflow `.github/workflows/pages.yml` запускается при изменении проекта в ветке `arena/cc31bd38-kcd2wiki` или `main`, а также вручную через **Actions → Deploy Wiki to GitHub Pages → Run workflow**.
 
-В **Settings → Pages → Build and deployment** должен быть выбран источник **GitHub Actions**. Workflow также пробует включить Pages через `actions/configure-pages`. Если GitHub сообщает, что для приватного репозитория Pages недоступен по текущему тарифу, потребуется поддерживаемый тариф либо отдельная публичная публикация; workflow не меняет видимость репозитория автоматически.
+В **Settings → Pages → Build and deployment** должен быть выбран источник **GitHub Actions**. Пока репозиторий приватный, workflow пропускается без ошибки. После публикации репозитория workflow пробует включить Pages через `actions/configure-pages`; видимость репозитория он не меняет.
 
 После успешного задания `deploy` адрес появится в environment `github-pages` и в настройках Pages. Для репозитория `markuzewb/KCD2Wiki` ожидаемый адрес: `https://markuzewb.github.io/KCD2Wiki/`.
 

@@ -43,5 +43,5 @@ A('Сон, жажда и голод','systems','Потребности перс�
 A('Последние изменения','updates','Журнал развития систем KCD2RP и версия проекта.','✦','changelog',['Новости'],[('heading','11 ноября 2026 · Развитие энциклопедии'),('text','Создана первая версия отдельной Wiki KCD2RP с каталогами, статьями, поиском и панелью управления контентом.'),('heading','Направления разработки'),('list','Игровые профессии и ремёсла.\nПеремещение между регионами.\nФракционные поставки и гильдийский транспорт.\nИнтерфейсы и инвентари.'),('notice','Это демонстрационное наполнение журнала, а не автоматически полученные данные об обновлениях сервера.')])
 site=dict(title='KCD2RP Wiki',subtitle='Энциклопедия средневековой Богемии',server='play.kcd2rp.ru:7777',theme='dark')
 result={'site':site,'categories':categories,'articles':articles}
-Path('/mnt/data/kcd2rp-wiki/seed.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
+Path(__file__).with_name('seed.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
 print(len(articles),'articles',len(categories),'categories')
