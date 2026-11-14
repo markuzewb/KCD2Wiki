@@ -88,15 +88,17 @@ async function handle(req,res,u,ctx){
       ingredients:recipe.ingredients.map(x=>({...x,imageUrl:x.id?extras.imageListUrl(x.id):null}))},meta:basicMeta(d)}),true;}
   if(pathname==='/api/game/items'){
     const q=searchText(u.searchParams.get('q'));const role=u.searchParams.get('role')||'all';
+    const cat=u.searchParams.get('cat')||'';
     let indices=[];
     for(let i=0;i<d.items.length;i++){
       const item=d.items[i];if(q&&!d._itemsIndex[i].includes(q))continue;
+      if(cat&&item.category!==cat)continue;
       if(role==='result'&&!item.recipeOutputs)continue;
       if(role==='ingredient'&&!item.recipeUses)continue;
       if(role==='priced'&&item.referencePrice==null)continue;
       indices.push(item);
     }
-    return answer(res,200,{...pageOf(indices,u.searchParams),rows:pageOf(indices,u.searchParams).rows.map(itemSummary),meta:basicMeta(d)}),true;
+    return answer(res,200,{...pageOf(indices,u.searchParams),rows:pageOf(indices,u.searchParams).rows.map(x=>{const row=itemSummary(x);delete row.stats;return row;}),meta:basicMeta(d)}),true;
   }
   if(pathname==='/api/game/recipes'){
     const q=searchText(u.searchParams.get('q'));const craft=u.searchParams.get('craft')||'';
