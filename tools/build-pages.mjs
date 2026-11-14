@@ -63,6 +63,14 @@ const regionInfo = {
 };
 writeJson('maps', { regions: regionInfo, markers: maps.markers, calibrated: false, notice: 'Игровые X/Y не привязаны к пикселям; метки размещаются вручную редактором.' });
 
+// Cache busting: a content hash of the frontend bundle versions every asset URL,
+// so browsers pick up new scripts/styles right after each deployment.
+const crypto = await import('node:crypto');
+const bundleFiles = ['app.js', 'wiki-extra.js', 'wiki-icons.js', 'static-api.js', 'style.css', 'wiki-icons.css', 'majestic-reference.css', 'reference-layout.css'];
+const digest = crypto.createHash('sha256');
+for (const file of bundleFiles) digest.update(fs.readFileSync(path.join(publicDir, file)));
+const v = digest.digest('hex').slice(0, 10);
+
 // Hash routes survive direct links and reloads without a server-side SPA fallback.
 // Detect the repository subpath at runtime, so the same artifact also works at /.
 const html = `<!doctype html>
@@ -75,21 +83,21 @@ const html = `<!doctype html>
   <title>KCD2RP Wiki — Энциклопедия Богемии</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <script>try{document.documentElement.dataset.theme=localStorage.getItem('kcd2rp-wiki-theme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
-  <link rel="stylesheet" href="./style.css">
-  <link rel="stylesheet" href="./wiki-icons.css">
-  <link rel="stylesheet" href="./majestic-reference.css">
-  <link rel="stylesheet" href="./reference-layout.css">
+  <link rel="stylesheet" href="./style.css?v=${v}">
+  <link rel="stylesheet" href="./wiki-icons.css?v=${v}">
+  <link rel="stylesheet" href="./majestic-reference.css?v=${v}">
+  <link rel="stylesheet" href="./reference-layout.css?v=${v}">
 </head>
 <body>
   <div id="app"><div class="loading">Загружаем летопись Богемии…</div></div>
   <noscript>Для работы энциклопедии включите JavaScript в браузере.</noscript>
   <script>window.KCD2RP_STATIC=true;window.KCD2RP_WIKI_BASE=location.pathname.replace(/\\/index\\.html$/,'/').replace(/\\/$/,'');</script>
-  <script src="./vendor/react.min.js"></script>
-  <script src="./vendor/react-dom.min.js"></script>
-  <script src="./static-api.js"></script>
-  <script src="./wiki-extra.js"></script>
-  <script src="./wiki-icons.js"></script>
-  <script src="./app.js"></script>
+  <script src="./vendor/react.min.js?v=${v}"></script>
+  <script src="./vendor/react-dom.min.js?v=${v}"></script>
+  <script src="./static-api.js?v=${v}"></script>
+  <script src="./wiki-extra.js?v=${v}"></script>
+  <script src="./wiki-icons.js?v=${v}"></script>
+  <script src="./app.js?v=${v}"></script>
 </body>
 </html>
 `;
