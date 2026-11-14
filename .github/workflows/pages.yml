@@ -3,7 +3,6 @@ name: Deploy Wiki to GitHub Pages
 on:
   push:
     branches:
-      - arena/cc31bd38-kcd2wiki
       - main
   workflow_dispatch:
 
@@ -23,18 +22,34 @@ jobs:
     if: ${{ github.event.repository.private == false }}
     runs-on: ubuntu-latest
     steps:
+      # One-time manual prerequisite: Settings -> Pages -> Source: GitHub Actions.
+      # GITHUB_TOKEN cannot create the Pages site (needs administration:write),
+      # so fail fast with an actionable message instead of an opaque 403.
+      - name: Verify GitHub Pages is enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if ! gh api "repos/$REPO/pages" --jq '.build_type' > /tmp/pages_type 2>/tmp/pages_err; then
+            echo "::error::GitHub Pages is not enabled. Open https://github.com/$REPO/settings/pages, set 'Build and deployment -> Source' to 'GitHub Actions', then re-run this workflow."
+            cat /tmp/pages_err
+            exit 1
+          fi
+          if [ "$(cat /tmp/pages_type)" != "workflow" ]; then
+            echo "::error::GitHub Pages source is '$(cat /tmp/pages_type)', not 'GitHub Actions'. Change Source to 'GitHub Actions' in Settings -> Pages, then re-run."
+            exit 1
+          fi
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+        uses: actions/configure-pages@v6.0.0
       - name: Install locked dependencies
         run: npm ci
       - name: Check JavaScript and secrets
@@ -44,7 +59,7 @@ jobs:
       - name: Test static site
         run: npm test
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: dist/pages
 
@@ -58,4 +73,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5.0.1
