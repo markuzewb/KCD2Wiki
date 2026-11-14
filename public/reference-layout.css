@@ -186,3 +186,15 @@ body::before{height:3px}
 @media(max-width:1250px){.ref-app-shell .ref-card-gallery{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:900px){.ref-app-shell .ref-card-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:560px){.ref-app-shell .ref-card-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.ref-item-copy{opacity:1}}
+
+/* Article images and faction gallery */
+.article-image{margin:18px 0}
+.article-image>img{width:100%;height:auto;border-radius:12px;border:1px solid var(--ui-border);display:block}
+.article-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0}
+.article-gallery-card{display:flex;flex-direction:column;border:1px solid var(--ui-border);border-radius:12px;overflow:hidden;background:var(--ui-surface);text-decoration:none;color:inherit;transition:.15s}
+.article-gallery-card:hover{border-color:var(--wiki-accent-primary);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.article-gallery-card>img{width:100%;height:auto;display:block;aspect-ratio:1568/882;object-fit:cover}
+.article-gallery-meta{display:flex;flex-direction:column;gap:2px;padding:11px 14px}
+.article-gallery-meta strong{font-size:16px;color:var(--wiki-text-primary)}
+.article-gallery-meta span{font-size:13.5px;color:var(--wiki-text-secondary)}
+@media(max-width:760px){.article-gallery{grid-template-columns:1fr}}
