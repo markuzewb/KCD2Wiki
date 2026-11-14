@@ -48,7 +48,11 @@ function validateArticle(entry,old){if(!entry||typeof entry!=='object')throw new
  let blocks=Array.isArray(entry.blocks)?entry.blocks:[];
  if(blocks.length>80)throw new Error('Не более 80 блоков');
  blocks=blocks.map(b=>{
-   let t=safe(b.type,18);if(!['heading','text','list','notice','table'].includes(t))throw new Error('Неизвестный тип блока');
+   let t=safe(b.type,18);if(!['heading','text','list','notice','table','image','gallery'].includes(t))throw new Error('Неизвестный тип блока');
+   if(t==='gallery'){
+     const items=(Array.isArray(b.items)?b.items:[]).slice(0,40).map(x=>({image:safe(x.image,300),title:safe(x.title,120),subtitle:safe(x.subtitle,160),to:safe(x.to,300)}));
+     return {type:'gallery',items};
+   }
    if(t==='table'){
      if(!Array.isArray(b.columns)||!Array.isArray(b.rows)||b.columns.length>12||b.rows.length>1000)throw new Error('Некорректная таблица');
      return {type:'table',columns:b.columns.map(x=>safe(x,100)),rows:b.rows.map(r=>(Array.isArray(r)?r:[]).slice(0,b.columns.length).map(x=>safe(x,250)))};
