@@ -1,0 +1,120 @@
+'use strict';
+/** Read-only item/recipe catalogue for KCD2RP Wiki. No gameplay/database writes. */
+const fs=require('node:fs');
+const path=require('node:path');
+const extras=require('./wiki-extra-api');
+const icons=require('./wiki-icons-api');
+const ROOT=__dirname;
+const BASE=path.join(ROOT,'catalog','game-catalog.json');
+const OVERRIDE=path.join(path.resolve(process.env.WIKI_DATA_DIR||path.join(ROOT,'data')),'game-catalog.json');
+let loadedPath='',mtime=0,cache=null;
+const answer=(res,status,body)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(body));};
+const searchText=s=>String(s||'').trim().toLocaleLowerCase('ru-RU');
+const small=(s,n=160)=>String(s??'').trim().slice(0,n);
+const range=(v,min,max,fallback)=>{let n=Number(v);return Number.isFinite(n)?Math.min(max,Math.max(min,Math.floor(n))):fallback};
+const PRICE=p=>typeof p==='number'&&Number.isFinite(p)?p:null;
+function validateCatalog(data){
+ if(!data||typeof data!=='object'||!data.meta||!Array.isArray(data.items)||!Array.isArray(data.recipes))throw new Error('Некорректный формат каталога. Нужны meta, items и recipes.');
+ if(data.items.length>12000||data.recipes.length>5000)throw new Error('Превышен лимит записей.');
+ const ids=new Set(),recipeIds=new Set();
+ for(const item of data.items){
+   if(!item||typeof item!=='object'||typeof item.id!=='string'||!(/^[a-f0-9-]{36}$/i).test(item.id)||!small(item.name,300)||item.name.length>300)throw new Error('Некорректный предмет');
+   if(ids.has(item.id))throw new Error('Повторяющийся GUID предмета');ids.add(item.id);
+   if(item.referencePrice!=null&&PRICE(item.referencePrice)===null)throw new Error('Некорректная цена предмета');
+ }
+ for(const r of data.recipes){
+   if(!r||typeof r!=='object'||typeof r.id!=='string'||!/^[a-zA-Z0-9_-]{1,140}$/.test(r.id)||!r.name||typeof r.name!=='string'||r.name.length>300)throw new Error('Некорректный рецепт');
+   if(!['rp','native','catalog-candidate'].includes(r.kind))throw new Error('Неизвестный тип рецепта');
+   if(recipeIds.has(r.id))throw new Error('Повторяющийся ID рецепта');recipeIds.add(r.id);
+   if(!Array.isArray(r.ingredients)||r.ingredients.length>100||!Array.isArray(r.outputs)||r.outputs.length>30)throw new Error('Некорректные ингредиенты рецепта');
+   for(const v of [...r.ingredients,...r.outputs]){
+     if(!v||typeof v!=='object'||typeof v.name!=='string'||v.name.length>300||(v.id&&typeof v.id!=='string'))throw new Error('Неправильная ссылка на предмет');
+   }
+ }
+ if(data.meta.itemCount!==data.items.length||data.meta.recipeCount!==data.recipes.length)throw new Error('Количество записей не совпадает с meta');
+ return data;
+}
+function dataFile(){return fs.existsSync(OVERRIDE)?OVERRIDE:BASE;}
+function get(){
+ const filename=dataFile();const stat=fs.statSync(filename);
+ if(!cache||filename!==loadedPath||mtime!==stat.mtimeMs){
+  cache=validateCatalog(JSON.parse(fs.readFileSync(filename,'utf8')));
+  loadedPath=filename;mtime=stat.mtimeMs;
+  const c=cache;
+  c._itemById=new Map(c.items.map(x=>[x.id.toLowerCase(),x]));
+  c._recipeById=new Map(c.recipes.map(x=>[x.id,x]));
+  c._itemsIndex=c.items.map(item=>searchText([item.name,item.english,item.internal,item.id].join(' ')));
+  c._recipesIndex=c.recipes.map(r=>searchText([r.id,r.name,r.craft,r.craftName,...r.ingredients.map(g=>g.name),...r.outputs.map(g=>g.name)].join(' ')));
+ }
+ return cache;
+}
+function basicMeta(d){return {...d.meta,sourceHashes:undefined};}
+function pageOf(rows,q){const page=range(q.get('page'),1,10000,1),limit=range(q.get('limit'),1,80,24);return {page,limit,total:rows.length,pages:Math.max(1,Math.ceil(rows.length/limit)),rows:rows.slice((page-1)*limit,page*limit)};}
+function itemSummary(item){const custom=extras.imageUrl(item.id);return {...item,imageUrl:custom||icons.itemImageUrl(item.id),iconMatch:custom?null:icons.itemInfo(item.id)?.match||null}}
+function recipeSummary(r){return {id:r.id,name:r.name,kind:r.kind,craft:r.craft,craftName:r.craftName,level:r.level,amount:r.amount,output:r.output,ingredientsCount:r.ingredients.length,outputImageUrl:r.output?.id?extras.imageListUrl(r.output.id):null};}
+async function handle(req,res,u,ctx){
+ const pathname=u.pathname;
+ if(!pathname.startsWith('/api/game/')&&pathname!=='/api/admin/game-catalog')return false;
+ try{
+  if(pathname==='/api/admin/game-catalog'){
+   if(req.method!=='POST')return answer(res,405,{error:'Метод не поддерживается'}),true;
+   if(!ctx.session(req))return answer(res,401,{error:'Требуется вход редактора'}),true;
+   if(!ctx.trustedOrigin(req))return answer(res,403,{error:'Недопустимый Origin'}),true;
+   const payload=await ctx.body(req,8000000);
+   const next=validateCatalog(payload.catalog||payload);
+   const folder=path.dirname(OVERRIDE);fs.mkdirSync(folder,{recursive:true});
+   if(fs.existsSync(OVERRIDE)){
+     const old=path.join(folder,'game-catalog.backup-'+Date.now()+'.json');
+     fs.copyFileSync(OVERRIDE,old);
+     const snapshots=fs.readdirSync(folder).filter(s=>/^game-catalog\.backup-\d+\.json$/.test(s)).sort();
+     for(const extra of snapshots.slice(0,-5))fs.rmSync(path.join(folder,extra));
+   }
+   const temp=OVERRIDE+'.tmp';fs.writeFileSync(temp,JSON.stringify({meta:next.meta,items:next.items,recipes:next.recipes}));fs.renameSync(temp,OVERRIDE);
+   loadedPath='';cache=null;
+   return answer(res,200,{ok:true,itemCount:next.items.length,recipeCount:next.recipes.length,sourceArchive:small(next.meta.sourceArchive,120)}),true;
+  }
+  if(req.method!=='GET')return answer(res,405,{error:'Метод не поддерживается'}),true;
+  const d=get();
+  if(pathname==='/api/game/meta')return answer(res,200,{meta:basicMeta(d)}),true;
+  const itemDetail=pathname.match(/^\/api\/game\/items\/([a-f0-9-]{36})$/i);
+  if(itemDetail){
+    const item=d._itemById.get(itemDetail[1].toLowerCase());if(!item)return answer(res,404,{error:'Предмет не найден'}),true;
+    const related=d.recipes.filter(r=>r.outputs.some(g=>g.id===item.id)||r.ingredients.some(g=>g.id===item.id)).slice(0,40).map(recipeSummary);
+    return answer(res,200,{item:itemSummary(item),related,meta:basicMeta(d)}),true;
+  }
+  const recipeDetail=pathname.match(/^\/api\/game\/recipes\/([a-zA-Z0-9_-]{1,140})$/);
+  if(recipeDetail){const recipe=d._recipeById.get(recipeDetail[1]);if(!recipe)return answer(res,404,{error:'Рецепт не найден'}),true;return answer(res,200,{recipe:{...recipe,
+      outputs:recipe.outputs.map(x=>({...x,imageUrl:x.id?extras.imageListUrl(x.id):null})),
+      ingredients:recipe.ingredients.map(x=>({...x,imageUrl:x.id?extras.imageListUrl(x.id):null}))},meta:basicMeta(d)}),true;}
+  if(pathname==='/api/game/items'){
+    const q=searchText(u.searchParams.get('q'));const role=u.searchParams.get('role')||'all';
+    let indices=[];
+    for(let i=0;i<d.items.length;i++){
+      const item=d.items[i];if(q&&!d._itemsIndex[i].includes(q))continue;
+      if(role==='result'&&!item.recipeOutputs)continue;
+      if(role==='ingredient'&&!item.recipeUses)continue;
+      if(role==='priced'&&item.referencePrice==null)continue;
+      indices.push(item);
+    }
+    return answer(res,200,{...pageOf(indices,u.searchParams),rows:pageOf(indices,u.searchParams).rows.map(itemSummary),meta:basicMeta(d)}),true;
+  }
+  if(pathname==='/api/game/recipes'){
+    const q=searchText(u.searchParams.get('q'));const craft=u.searchParams.get('craft')||'';
+    const kind=u.searchParams.get('kind')||'';const level=u.searchParams.get('level')||'';
+    let rows=[];
+    for(let i=0;i<d.recipes.length;i++){
+      const r=d.recipes[i];if(q&&!d._recipesIndex[i].includes(q))continue;
+      if(craft&&r.craft!==craft)continue;
+      if(kind&&r.kind!==kind)continue;
+      if(level&&String(r.level)!==level)continue;
+      rows.push(recipeSummary(r));
+    }
+    return answer(res,200,{...pageOf(rows,u.searchParams),meta:basicMeta(d)}),true;
+  }
+  return answer(res,404,{error:'Каталог не найден'}),true;
+ }catch(e){
+  console.error('[WIKI CATALOG]',e.message);
+  return answer(res,e.message==='Request too large'?413:400,{error:e.message||'Ошибка каталога'}),true;
+ }
+}
+module.exports={handle};
