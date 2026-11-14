@@ -1,0 +1,23 @@
+[Unit]
+Description=KCD2RP Wiki (React encyclopedia)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kcd2wiki
+Group=kcd2wiki
+WorkingDirectory=/srv/kcd2rp-wiki
+EnvironmentFile=/etc/kcd2rp-wiki.env
+ExecStart=/usr/bin/node /srv/kcd2rp-wiki/server.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/kcd2rp-wiki/data
+ProtectHome=true
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
