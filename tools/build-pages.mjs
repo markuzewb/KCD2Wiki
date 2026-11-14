@@ -56,15 +56,25 @@ writeJson('game', { meta: publicMeta, items: leanItems, recipes: game.recipes, m
 writeJson('item-stats', { items: itemStats });
 const families = {};
 const animCats = {};
+const animKinds = {};
+const animPhases = {};
+const animPoses = {};
 const clips = animations.clips.map(row => ({
   clip: String(row.clip), families: row.families || [], fragments: row.fragments || [],
-  ru: row.ru || '', desc: row.desc || '', phase: row.phase || '', cat: row.cat || '', pose: row.pose || '', kind: row.kind || ''
+  ru: row.ru || '', desc: row.desc || '', phase: row.phase || '', cat: row.cat || '', catIcon: row.catIcon || '',
+  sub: row.sub || '', pose: row.pose || '', kind: row.kind || '', tags: row.tags || []
 }));
 for (const clip of clips) {
   for (const family of clip.families) families[family] = (families[family] || 0) + 1;
   if (clip.cat) animCats[clip.cat] = (animCats[clip.cat] || 0) + 1;
+  if (clip.kind) animKinds[clip.kind] = (animKinds[clip.kind] || 0) + 1;
+  if (clip.phase) animPhases[clip.phase] = (animPhases[clip.phase] || 0) + 1;
+  if (clip.pose) animPoses[clip.pose] = (animPoses[clip.pose] || 0) + 1;
 }
-writeJson('animations', { source: animations.source, imported: animations.imported, clips, families, cats: animCats });
+writeJson('animations', {
+  source: animations.source, imported: animations.imported, clips, families,
+  cats: animCats, catalog: animations.catalog || [], kinds: animKinds, phases: animPhases, poses: animPoses
+});
 writeJson('icons', { source: icons.source, total: icons.icons.length, categories: icons.categories, icons: icons.icons });
 writeJson('item-icon-map', { itemCount: matches.itemCount, matchedCount: matches.matchedCount, counts: matches.counts, items: matches.items });
 const mapLabels = readJson(path.join(root, 'catalog', 'map-labels.json'));

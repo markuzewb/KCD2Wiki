@@ -76,14 +76,22 @@
 
     if (path === '/api/animations/meta') {
       const data = await load('animations');
-      return json({ count: data.clips.length, families: data.families, cats: data.cats || {}, source: data.source, imported: data.imported });
+      return json({ count: data.clips.length, families: data.families, cats: data.cats || {}, catalog: data.catalog || [], kinds: data.kinds || {}, phases: data.phases || {}, poses: data.poses || {}, source: data.source, imported: data.imported });
     }
     if (path === '/api/animations') {
       const data = await load('animations');
       const search = text(query.get('q'));
       const family = query.get('family') || '';
       const cat = query.get('cat') || '';
-      const rows = data.clips.filter(clip => (!search || text([clip.clip, clip.ru || '', clip.desc || '', ...clip.families, ...clip.fragments].join(' ')).includes(search)) && (!family || clip.families.includes(family)) && (!cat || clip.cat === cat));
+      const sub = query.get('sub') || '';
+      const kind = query.get('kind') || '';
+      const phase = query.get('phase') || '';
+      const pose = query.get('pose') || '';
+      const rows = data.clips.filter(clip =>
+        (!search || text([clip.clip, clip.ru || '', clip.desc || '', ...(clip.tags || []), ...clip.families, ...clip.fragments].join(' ')).includes(search)) &&
+        (!family || clip.families.includes(family)) &&
+        (!cat || clip.cat === cat) && (!sub || clip.sub === sub) &&
+        (!kind || clip.kind === kind) && (!phase || clip.phase === phase) && (!pose || clip.pose === pose));
       return json({ ...pageOf(rows, query, 30), families: data.families, cats: data.cats || {} });
     }
     const animation = path.match(/^\/api\/animations\/([^/]+)$/);
