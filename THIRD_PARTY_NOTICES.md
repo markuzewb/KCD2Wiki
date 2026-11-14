@@ -15,3 +15,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 The `public/icons/` artwork in this package was converted from `icons.rar` supplied by the user of this project. Names and icons are associated with Kingdom Come: Deliverance II and may be copyrighted by Warhorse Studios / the respective rights holders. This package does **not** claim that game artwork is available under an open-source license. The administrator should verify permission for public redistribution of the artwork on a public website or CDN before deploying these files.
 
 File conversion uses WebP; image sources were not replaced with unrelated stock assets. React and the site's own code are separate from these game assets.
+
+## Alegreya SC font (map place-name labels)
+
+The `public/fonts/alegreya-sc-*.woff2` files are subset builds of the Alegreya SC typeface, obtained from the `@fontsource/alegreya-sc` npm package (v5.3.0).
+
+Copyright 2011 The Alegreya Project Authors (https://github.com/huertatipografica/Alegreya). Licensed under the SIL Open Font License, Version 1.1 (https://scripts.sil.org/OFL). The fonts are bundled, unmodified apart from upstream subsetting, to render place-name banners on the in-game style atlas.

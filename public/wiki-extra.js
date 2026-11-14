@@ -102,8 +102,13 @@ class MapPage extends React.Component{
   const markerElements=markers.map(marker=>h('button',{key:marker.id,className:'wiki-map-pin'+(s.chosen===marker.id?' selected':''),style:{left:marker.x*w,top:marker.y*ht},
     onPointerDown:e=>e.stopPropagation(),onClick:e=>{e.stopPropagation();this.focusMarker(marker)},title:marker.name},
     h('span',{},iconFor[marker.category]||'◆'),h('small',{},marker.name)));
+  // Place-name banners in the in-game map style: constant on-screen size via inverse scale.
+  const labelScale=Math.min(1/scale,5.4),showMinor=s.zoom>=1.5;
+  const labelElements=(region?.labels||[]).filter(l=>showMinor||(l.kind!=='minor'&&l.kind!=='water')).map((l,i)=>
+   h('div',{key:'town'+i,className:'wiki-map-town kind-'+(l.kind||'village'),style:{left:l.x*w,top:l.y*ht,transform:`scale(${labelScale}) translate(-50%,-118%)`}},
+    l.kind==='water'?h('em',{},l.name):h('span',{className:'wiki-map-town-scroll'},h('i',{},l.kind==='city'||l.kind==='town'?'⍟':l.kind==='castle'?'♜':'◆'),l.name)));
   const stage=h('div',{className:'wiki-map-stage',style:{width:w,height:ht,transform:`translate(${s.tx}px, ${s.ty}px) scale(${scale})`}},
-   assets,markerElements,s.candidate&&h('div',{className:'wiki-map-pin candidate',style:{left:s.candidate.x*w,top:s.candidate.y*ht}},
+   assets,labelElements,markerElements,s.candidate&&h('div',{className:'wiki-map-pin candidate',style:{left:s.candidate.x*w,top:s.candidate.y*ht}},
     h('span',{},'✚'),h('small',{},s.name||'Новая точка')));
   const toolbar=h('div',{className:'wiki-map-toolbar'},h('span',{},'✧ '+(region?.title||'Регион')),
     h('small',{},'ЛКМ — перемещение · Колесо — масштаб'),
