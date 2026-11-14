@@ -170,3 +170,19 @@ body::before{height:3px}
 .ref-app-shell .ref-item-details>span{font-size:15px}
 .ref-item-chips{margin:14px 0 4px}
 @media(max-width:440px){.ref-app-shell .ref-item-art{height:84px}}
+
+/* Denser item grid: 6 per row, compact cards, inline copy button */
+.ref-app-shell .ref-card-gallery{grid-template-columns:repeat(6,minmax(0,1fr));gap:11px}
+.ref-app-shell .ref-item-art{height:82px}
+.ref-app-shell .ref-item-art>img{width:56px;height:56px}
+.ref-app-shell .ref-item-id{font-size:11px;padding:2px 5px;top:6px;left:6px}
+.ref-app-shell .ref-item-details{padding:8px 10px 10px;gap:3px}
+.ref-app-shell .ref-item-details strong{font-size:14.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ref-app-shell .ref-item-details>span{font-size:13px;line-height:1.35}
+.ref-item-copy{position:absolute;top:5px;right:5px;z-index:1;width:26px;height:26px;display:grid;place-items:center;border-radius:5px;border:1px solid var(--ui-border);background:var(--ui-surface);color:var(--wiki-text-secondary);font-size:13px;cursor:pointer;opacity:0;transition:.12s}
+.ref-item-card:hover .ref-item-copy{opacity:1}
+.ref-item-copy:hover{border-color:var(--wiki-accent-primary);color:var(--wiki-accent-primary)}
+.game-copy-row{display:flex;gap:9px;justify-content:center;margin:2px 0 16px;flex-wrap:wrap}
+@media(max-width:1250px){.ref-app-shell .ref-card-gallery{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:900px){.ref-app-shell .ref-card-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.ref-app-shell .ref-card-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.ref-item-copy{opacity:1}}

@@ -77,7 +77,19 @@ if not ANIMS_ONLY:
         name = r['ru'] or r['en'] or r['name'] or ''
         return (1 if 'в игре не назван' in name else 0, name.lower(), r['id'])
 
+    def damage_of(extra):
+        for s in extra:
+            if s['k'] == 'Урон':
+                try:
+                    v = float(str(s['v']).replace(',', '.'))
+                    return v if v > 0 else None
+                except ValueError:
+                    return None
+        return None
+
     for row in sorted(full, key=item_order):
+        if 'WWWWW' in (row['ru'] or '') or 'WWWWW' in (row['en'] or ''):
+            continue  # test items like test_swordWithLongName
         old = ours.get(row['id'].lower())
         item = dict(old) if old else {
             'id': row['id'], 'name': row['ru'] or row['en'] or row['name'],
@@ -91,6 +103,11 @@ if not ANIMS_ONLY:
         item['weight'] = row['weight']
         item['gamePrice'] = row['price']
         item['stats'] = [[s['k'], s['v'], s.get('u') or '', s.get('g') or ''] for s in row['extra']]
+        dmg = damage_of(row['extra'])
+        if dmg:
+            item['damage'] = dmg
+        else:
+            item.pop('damage', None)
         item['icon'] = row['icon'] if row['icon'] in icon_pos else None
         merged.append(item)
     assert len(merged) == len({i['id'].lower() for i in merged})
