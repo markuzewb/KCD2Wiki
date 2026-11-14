@@ -60,6 +60,7 @@ function SearchInput({value,onChange,placeholder}){return h('div',{className:'se
 const kindLabels={rp:'RP-рецепт','catalog-candidate':'Дополнительный · требует проверки',native:'Нативный KCD2'};
 const fmtCount=n=>Number(n||0).toLocaleString('ru-RU');
 const fmtPrice=n=>n==null?'—':Number(n).toLocaleString('ru-RU',{maximumFractionDigits:2})+' гр.';
+const fmtWeight=n=>n==null?null:Number(n).toLocaleString('ru-RU',{maximumFractionDigits:2})+' кг';
 function WikiItemLink({item}){
  if(!item)return h('span',{},'—');
  if(item.exists&&item.id)return h(Link,{to:'/game/item/'+item.id},item.name);
@@ -72,10 +73,10 @@ function WikiCatalogPager({page,total,pages,onChange}){
    h('button',{type:'button',disabled:page>=pages,onClick:()=>onChange(Math.min(pages,page+1))},'Далее →'));
 }
 class GameCatalogPage extends React.Component{
- constructor(props){super(props);this.state={q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],recipe:null,loading:true,error:''};this._seq=0;this._timer=null;}
+ constructor(props){super(props);this.state={q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
  componentDidMount(){this.load();}
  componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
- componentWillUnmount(){clearTimeout(this._timer);this._seq++;}
+ componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;}
  filter(name,value){this.setState({[name]:value,page:1},()=>{clearTimeout(this._timer);this._timer=setTimeout(()=>this.load(),220);});}
  page(n){this.setState({page:n},()=>this.load());window.scrollTo({top:0,behavior:'smooth'});}
  async load(){const seq=++this._seq;const st=this.state;const mode=this.props.mode;let url;
@@ -124,7 +125,18 @@ class GameCatalogPage extends React.Component{
     h('div',{className:'ref-catalog-count'},'Найдено: ',fmtCount(st.total),' · ',isItem?'Предметы':'Рецепты'),
     results);
  }
- itemRow(item){return h(Link,{key:item.id,to:'/game/item/'+item.id,className:'game-result ref-item-card'},h('div',{className:'ref-item-art'},h('span',{className:'ref-item-id'},item.id&&item.id.length>13?item.id.slice(0,8):item.id),h('img',{src:wikiUrl(item.imageUrl||'/icons/game/_placeholder.webp'),alt:'',loading:'lazy'})),h('div',{className:'ref-item-details'},h('strong',{},item.name),h('span',{},item.referencePrice==null?(item.english||item.internal||'Предмет KCD2'):fmtPrice(item.referencePrice))))}
+ copy(text,marker){if(!text)return;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).catch(()=>{});else{const el=document.createElement('textarea');el.value=text;document.body.append(el);el.select();document.execCommand('copy');el.remove();}
+  if(marker){clearTimeout(this._copyTimer);this.setState({copied:marker});this._copyTimer=setTimeout(()=>this.setState({copied:''}),1300);}}
+ itemRow(item){
+  const price=item.gamePrice??item.referencePrice;
+  const metaLine=[price!=null?fmtPrice(price):null,fmtWeight(item.weight),item.damage?'⚔ '+fmtCount(item.damage):null].filter(Boolean).join(' · ');
+  const cls=item.internal||item.english||'';
+  return h(Link,{key:item.id,to:'/game/item/'+item.id,className:'game-result ref-item-card'},
+   h('div',{className:'ref-item-art'},
+     h('span',{className:'ref-item-id'},item.id&&item.id.length>13?item.id.slice(0,8):item.id),
+     cls?h('button',{className:'ref-item-copy',title:'Скопировать класснейм: '+cls,'aria-label':'Скопировать класснейм',onClick:e=>{e.preventDefault();e.stopPropagation();this.copy(cls,item.id);}},this.state.copied===item.id?'✓':'⧉'):null,
+     h('img',{src:wikiUrl(item.imageUrl||'/icons/game/_placeholder.webp'),alt:'',loading:'lazy'})),
+   h('div',{className:'ref-item-details'},h('strong',{},item.name),h('span',{},metaLine||item.english||item.internal||'Предмет KCD2')))}
  recipeRow(r){return h(Link,{key:r.id,to:'/game/recipe/'+r.id,className:'game-result ref-item-card'},h('div',{className:'ref-item-art'},h('span',{className:'ref-item-id'},'Ур. '+(r.level??'—')),r.outputImageUrl?h('img',{src:wikiUrl(r.outputImageUrl),alt:'',loading:'lazy'}):h('span',{className:'ref-art-placeholder'},h(Icon,{name:'hammer'}))),h('div',{className:'ref-item-details'},h('strong',{},r.name),h('span',{},r.craftName||'Рецепт KCD2')))}
  field(name,val){return h('div',{className:'game-field'},h('small',{},name),h('strong',{},val==null?'—':val));}
  itemStats(item){const stats=item&&item.stats;if(!Array.isArray(stats)||!stats.length)return null;
@@ -135,6 +147,9 @@ class GameCatalogPage extends React.Component{
  itemDetail(){const item=this.state.item;if(this.state.error)return this.failed();if(!item)return this.loading();
  return h('div',{className:'page game-page'},h('div',{className:'game-back'},h(Link,{to:'/game/items'},'← Все предметы')),
    this.intro(item.name,item.english||'Предмет из каталога Kingdom Come: Deliverance II','КАРТОЧКА ПРЕДМЕТА'),
+   h('div',{className:'game-copy-row'},
+     h('button',{className:'extra-copy',onClick:()=>this.copy(item.id,'id')},this.state.copied==='id'?'✓ Скопировано':'⧉ Скопировать ID'),
+     item.internal?h('button',{className:'extra-copy',onClick:()=>this.copy(item.internal,'cls')},this.state.copied==='cls'?'✓ Скопировано':'⧉ Скопировать класснейм'):null),
    window.WikiExtraItemArt?h(window.WikiExtraItemArt,{item,admin:!!this.props.admin,size:'large'}):null,
    h('div',{className:'game-detail-grid'},h('section',{className:'game-detail-block'},h('h2',{},'Сведения'),
      h('div',{className:'game-fields'},this.field('GUID',h('code',{},item.id)),this.field('Внутренний код',h('code',{},item.internal||'—')),
