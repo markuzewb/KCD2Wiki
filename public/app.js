@@ -78,7 +78,7 @@ class GameCatalogPage extends React.Component{
  componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
  componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;}
  filter(name,value){this.setState({[name]:value,page:1},()=>{clearTimeout(this._timer);this._timer=setTimeout(()=>this.load(),220);});}
- page(n){this.setState({page:n},()=>this.load());window.scrollTo({top:0,behavior:'smooth'});}
+ page(n){this.setState({page:n},()=>this.load());}
  async load(){const seq=++this._seq;const st=this.state;const mode=this.props.mode;let url;
   if(mode==='item')url='/api/game/items/'+encodeURIComponent(this.props.id);
   else if(mode==='recipe')url='/api/game/recipes/'+encodeURIComponent(this.props.id);
