@@ -103,7 +103,7 @@ class GameCatalogPage extends React.Component{
  failed(){return h('div',{className:'game-placeholder error'},this.state.error,h('button',{onClick:()=>this.load()},'Повторить'));}
  catalog(){
   const isItem=this.props.mode==='items',st=this.state;
-  const tabs=h('div',{className:'ref-catalog-tabs'},h(Link,{to:'/game/items',className:cls('ref-tab',isItem&&'active')},'Предметы'),h(Link,{to:'/game/recipes',className:cls('ref-tab',!isItem&&'active')},'Рецепты'));
+  const tabs=h('div',{className:'ref-catalog-tabs'},h(Link,{to:'/game/items',className:cls('ref-tab',isItem&&'active')},'Предметы'),h(Link,{to:'/game/recipes',className:cls('ref-tab',!isItem&&'active')},'Рецепты'),h(Link,{to:'/animations',className:'ref-tab'},'Анимации'),h(Link,{to:'/icons',className:'ref-tab'},'Иконки'));
   const chip=(active,onClick,label,key)=>h('button',{key,className:'extra-chip'+(active?' active':''),onClick},label);
   const subcats=isItem&&st.cat?(st.meta?.itemSubcats?.[st.cat]||[]):[];
   const catRow=st.meta?.itemCategories?.find(c=>c[0]===st.cat);
@@ -193,9 +193,6 @@ class GameCatalogPage extends React.Component{
  itemDetail(){const item=this.state.item;if(this.state.error)return this.failed();if(!item)return this.loading();
  return h('div',{className:'page game-page'},h('div',{className:'game-back'},h(Link,{to:'/game/items'},'← Все предметы')),
    this.intro(item.name,item.english||'Предмет из каталога Kingdom Come: Deliverance II','КАРТОЧКА ПРЕДМЕТА'),
-   h('div',{className:'game-copy-row'},
-     h('button',{className:'extra-copy',onClick:()=>this.copy(item.id,'id')},this.state.copied==='id'?'✓ Скопировано':'⧉ Скопировать ID'),
-     item.internal?h('button',{className:'extra-copy',onClick:()=>this.copy(item.internal,'cls')},this.state.copied==='cls'?'✓ Скопировано':'⧉ Скопировать класснейм'):null),
    h('div',{className:'game-item-hero'},
      window.WikiExtraItemArt?h(window.WikiExtraItemArt,{item,admin:!!this.props.admin,size:'large'}):null,
      h('section',{className:'game-detail-block game-item-info'},h('h2',{},'Сведения'),
@@ -207,8 +204,8 @@ class GameCatalogPage extends React.Component{
        item.damage?this.field('Урон',fmtCount(item.damage)):null,
        this.field('Рецептов на выходе',fmtCount(item.recipeOutputs)),
        this.field('Используется в рецептах',fmtCount(item.recipeUses)),
-       this.field('Внутренний код',h('code',{},item.internal||'—')),
-       this.field('GUID',h('code',{},item.id))))),
+       this.field('Внутренний код',item.internal?h('span',{className:'game-copy-val'},h('code',{},item.internal),h('button',{className:'game-field-copy',title:'Скопировать класснейм','aria-label':'Скопировать класснейм',onClick:()=>this.copy(item.internal,'cls')},this.state.copied==='cls'?'✓':'⧉')):'—'),
+       this.field('GUID',h('span',{className:'game-copy-val'},h('code',{},item.id),h('button',{className:'game-field-copy',title:'Скопировать ID','aria-label':'Скопировать ID',onClick:()=>this.copy(item.id,'id')},this.state.copied==='id'?'✓':'⧉')))))),
    this.itemVariants(item),
    this.itemStats(item),
      this.state.related.length?h('section',{className:'game-relation'},h('h2',{},'Рецепты с этим предметом'),h('div',{className:'game-results'},this.state.related.map(r=>this.recipeRow(r)))):h('div',{className:'game-placeholder'},'В доступных экспортированных рецептах предмет не упоминается.'),

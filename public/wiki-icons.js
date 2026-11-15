@@ -35,6 +35,7 @@ class IconGallery extends React.Component{
      h('div',{className:'ref-catalog-tabs'},
        h('button',{type:'button',className:'ref-tab',onClick:()=>go('/game/items')},'Предметы'),
        h('button',{type:'button',className:'ref-tab',onClick:()=>go('/game/recipes')},'Рецепты'),
+       h('button',{type:'button',className:'ref-tab',onClick:()=>go('/animations')},'Анимации'),
        h('button',{type:'button',className:'ref-tab active'},'Иконки')),
      h('div',{className:'ref-catalog-filters'},
        h('div',{className:'search-field'},
