@@ -214,8 +214,11 @@ class GameCatalogPage extends React.Component{
  recipeDetail(){const r=this.state.recipe;if(this.state.error)return this.failed();if(!r)return this.loading();
  const out=(r.outputs||[])[0];return h('div',{className:'page game-page'},h('div',{className:'game-back'},h(Link,{to:'/game/recipes'},'← Все рецепты')),
    this.intro(r.name,r.craftName,'КАРТОЧКА РЕЦЕПТА'),
-   h('section',{className:'game-detail-block'},h('h2',{},'Изготовление'),h('div',{className:'game-fields'},
-       out?this.field('Изделие',h(WikiItemLink,{item:out})):null,
+   h('section',{className:'game-detail-block'},h('h2',{},'Изготовление'),
+     out?h('div',{className:'game-recipe-output'},
+       h(Link,{to:out.id?'/game/item/'+out.id:'#',className:'game-recipe-output-art'},out.imageUrl?h('img',{src:wikiUrl(out.imageUrl),alt:out.name||'',loading:'lazy'}):h('span',{},'✧')),
+       h('div',{className:'game-recipe-output-info'},h('strong',{},h(WikiItemLink,{item:out})),h('small',{},'Изделие · × '+(r.amount||1)))):null,
+     h('div',{className:'game-fields'},
        this.field('Ремесло',r.craftName),this.field('Требуемый уровень',r.level??'—'),this.field('Выход изделий','× '+(r.amount||1)),
        this.field('Время',r.seconds==null?'—':r.seconds+' сек.'),this.field('Плата',fmtPrice(r.fee)),this.field('Опыт',r.xp==null?'—':'+'+r.xp))),
    this.recipeVariants(r),
