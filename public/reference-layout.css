@@ -230,15 +230,23 @@ body::before{height:3px}
 .game-item-variants{margin:0 0 14px;padding:18px 20px}
 .game-item-variants h2{font-size:22px;margin:0 0 6px}
 .game-variants-hint{margin:0 0 12px;font-size:14.5px;color:var(--wiki-text-secondary)}
-.game-variant{align-items:flex-start}
-.game-variant.current{border-color:var(--wiki-accent-primary);box-shadow:0 0 0 1px var(--wiki-accent-primary) inset}
-.game-variant-main{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
-.game-variant-main strong{font-size:16.5px}
-.game-variant-badge{font-style:normal;margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--wiki-accent-primary);color:#fff;font-size:11.5px;font-weight:800;vertical-align:2px}
+.game-variant-squares{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.game-variant-square{position:relative;width:64px;height:64px;padding:6px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-surface);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,transform .15s,box-shadow .15s}
+.game-variant-square:hover{border-color:var(--wiki-accent-primary);transform:translateY(-2px)}
+.game-variant-square img{max-width:100%;max-height:100%;object-fit:contain}
+.game-variant-square.selected{border-color:var(--wiki-accent-primary);box-shadow:0 0 0 2px var(--wiki-accent-primary)}
+.game-variant-square.current::after{content:'';position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--wiki-accent-primary)}
+.game-variant-num{position:absolute;bottom:2px;right:5px;font:700 10.5px/1 system-ui;font-style:normal;color:var(--wiki-text-secondary)}
+.game-variant-panel{display:flex;flex-direction:column;gap:5px;padding:13px 15px;border:1px solid var(--ui-border);border-radius:10px;background:var(--ui-surface)}
+.game-variant-panel-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.game-variant-panel-head strong{font-size:16.5px}
+.game-variant-badge{font-style:normal;padding:2px 8px;border-radius:999px;background:var(--wiki-accent-primary);color:#fff;font-size:11.5px;font-weight:800}
+.game-variant-open{font-size:13.5px;font-weight:700;color:var(--wiki-accent-primary);text-decoration:none}
+.game-variant-open:hover{text-decoration:underline}
 .game-variant-code{font:12.5px Consolas,monospace;color:var(--wiki-text-secondary);overflow-wrap:anywhere}
 .game-variant-craft{font-size:13.5px;color:var(--wiki-text-secondary)}
 .game-variant-craft a{color:inherit;text-decoration:underline dotted}
 .game-variant-craft.differs{color:var(--wiki-accent-primary)}
 .game-variant-craft.differs a{color:var(--wiki-accent-primary)}
-.game-variant-meta{white-space:nowrap;font-size:14px;color:var(--wiki-text-primary)}
-@media(max-width:700px){.game-variant-meta{white-space:normal}}
+.game-variant-meta{margin-left:auto;white-space:nowrap;font-size:14px;color:var(--wiki-text-primary)}
+@media(max-width:700px){.game-variant-meta{margin-left:0;white-space:normal}}
