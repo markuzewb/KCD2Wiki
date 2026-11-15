@@ -90,9 +90,17 @@ async function handle(req,res,u,ctx){
     return answer(res,200,{item:itemSummary(item),variants,related,meta:basicMeta(d)}),true;
   }
   const recipeDetail=pathname.match(/^\/api\/game\/recipes\/([a-zA-Z0-9_-]{1,140})$/);
-  if(recipeDetail){const recipe=d._recipeById.get(recipeDetail[1]);if(!recipe)return answer(res,404,{error:'Рецепт не найден'}),true;return answer(res,200,{recipe:{...recipe,
+  if(recipeDetail){const recipe=d._recipeById.get(recipeDetail[1]);if(!recipe)return answer(res,404,{error:'Рецепт не найден'}),true;
+    const twinRecipes=d.recipes.filter(row=>row.name===recipe.name&&row.craft===recipe.craft);
+    const recipeVariants=twinRecipes.length>1?twinRecipes
+      .slice().sort((a,b)=>(a.level??Infinity)-(b.level??Infinity))
+      .map(v=>({id:v.id,name:v.name,craftName:v.craftName,level:v.level,kind:v.kind,amount:v.amount,
+        fee:v.fee,xp:v.xp,seconds:v.seconds,
+        outputImageUrl:v.output?.id?extras.imageListUrl(v.output.id):null,
+        ingredients:v.ingredients.map(g=>(g.amount>1?g.amount+'× ':'')+g.name).join(' + ')})):[];
+    return answer(res,200,{recipe:{...recipe,
       outputs:recipe.outputs.map(x=>({...x,imageUrl:x.id?extras.imageListUrl(x.id):null})),
-      ingredients:recipe.ingredients.map(x=>({...x,imageUrl:x.id?extras.imageListUrl(x.id):null}))},meta:basicMeta(d)}),true;}
+      ingredients:recipe.ingredients.map(x=>({...x,imageUrl:x.id?extras.imageListUrl(x.id):null}))},variants:recipeVariants,meta:basicMeta(d)}),true;}
   if(pathname==='/api/game/items'){
     const q=searchText(u.searchParams.get('q'));const role=u.searchParams.get('role')||'all';
     const cat=u.searchParams.get('cat')||'';const sort=u.searchParams.get('sort')||'';
@@ -139,8 +147,15 @@ async function handle(req,res,u,ctx){
       'level-desc':(a,b)=>(b.level??-1)-(a.level??-1),'level-asc':(a,b)=>(a.level??Infinity)-(b.level??Infinity),
       'ingr-desc':(a,b)=>b.ingredients.length-a.ingredients.length,'ingr-asc':(a,b)=>a.ingredients.length-b.ingredients.length}[sort];
     if(cmp)rows.sort(cmp);
-    const page=pageOf(rows,u.searchParams);
-    return answer(res,200,{...page,rows:page.rows.map(recipeSummary),meta:basicMeta(d)}),true;
+    const seen=new Map();const grouped=[];
+    for(const r of rows){
+      const key=r.name+'\u0000'+r.craft;
+      const g=seen.get(key);
+      if(!g){const entry={recipe:r,count:1,min:r.level,max:r.level};seen.set(key,entry);grouped.push(entry);}
+      else{g.count++;if(r.level!=null){g.min=g.min==null?r.level:Math.min(g.min,r.level);g.max=g.max==null?r.level:Math.max(g.max,r.level);}}
+    }
+    const page=pageOf(grouped,u.searchParams);
+    return answer(res,200,{...page,rows:page.rows.map(g=>({...recipeSummary(g.recipe),variants:g.count,levelMin:g.min,levelMax:g.max})),meta:basicMeta(d)}),true;
   }
   return answer(res,404,{error:'Каталог не найден'}),true;
  }catch(e){

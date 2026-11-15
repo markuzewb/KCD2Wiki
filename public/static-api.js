@@ -169,8 +169,15 @@
         (!craft || recipe.craft === craft) && (!kind || recipe.kind === kind) && (!level || String(recipe.level) === level)
       );
       sortRecipes(rows, sort);
-      const page = pageOf(rows, query);
-      return json({ ...page, rows: page.rows.map(recipe => recipeSummary(recipe, game, matches)), meta: game.meta });
+      const seen = new Map(); const grouped = [];
+      for (const recipe of rows) {
+        const key = recipe.name + '\u0000' + recipe.craft;
+        const g = seen.get(key);
+        if (!g) { const entry = { recipe, count: 1, min: recipe.level, max: recipe.level }; seen.set(key, entry); grouped.push(entry); }
+        else { g.count++; if (recipe.level != null) { g.min = g.min == null ? recipe.level : Math.min(g.min, recipe.level); g.max = g.max == null ? recipe.level : Math.max(g.max, recipe.level); } }
+      }
+      const page = pageOf(grouped, query);
+      return json({ ...page, rows: page.rows.map(g => ({ ...recipeSummary(g.recipe, game, matches), variants: g.count, levelMin: g.min, levelMax: g.max })), meta: game.meta });
     }
     const item = path.match(/^\/api\/game\/items\/([^/]+)$/);
     if (item) {
@@ -195,12 +202,22 @@
       const id = decodeURIComponent(recipe[1]);
       const found = game.recipes.find(row => row.id === id);
       if (!found) return json({ error: 'Рецепт не найден' }, 404);
+      const twinRecipes = game.recipes.filter(row => row.name === found.name && row.craft === found.craft);
+      const recipeVariants = twinRecipes.length > 1 ? twinRecipes
+        .slice().sort((a, b) => (a.level ?? Infinity) - (b.level ?? Infinity))
+        .map(v => ({
+          id: v.id, name: v.name, craftName: v.craftName, level: v.level, kind: v.kind, amount: v.amount,
+          fee: v.fee, xp: v.xp, seconds: v.seconds,
+          outputImageUrl: v.output?.id ? itemImage(v.output.id, game, matches) : null,
+          ingredients: v.ingredients.map(g => (g.amount > 1 ? g.amount + '× ' : '') + g.name).join(' + ')
+        })) : [];
       return json({
         recipe: {
           ...found,
           outputs: found.outputs.map(row => ({ ...row, imageUrl: row.id ? itemImage(row.id, game, matches) : null })),
           ingredients: found.ingredients.map(row => ({ ...row, imageUrl: row.id ? itemImage(row.id, game, matches) : null }))
         },
+        variants: recipeVariants,
         meta: game.meta
       });
     }

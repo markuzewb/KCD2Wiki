@@ -157,8 +157,37 @@ class GameCatalogPage extends React.Component{
      many?h('span',{className:'ref-item-variants',title:'Вариантов предмета: '+item.variants},'× '+fmtCount(item.variants)):null,
      h('img',{src:wikiUrl(item.imageUrl||'/icons/game/_placeholder.webp'),alt:'',loading:'lazy'})),
    h('div',{className:'ref-item-details'},h('strong',{},item.name),h('span',{},metaLine||item.english||item.internal||'Предмет KCD2')))}
- recipeRow(r){return h(Link,{key:r.id,to:'/game/recipe/'+r.id,className:'game-result ref-item-card'},h('div',{className:'ref-item-art'},h('span',{className:'ref-item-id'},'Ур. '+(r.level??'—')),r.outputImageUrl?h('img',{src:wikiUrl(r.outputImageUrl),alt:'',loading:'lazy'}):h('span',{className:'ref-art-placeholder'},h(Icon,{name:'hammer'}))),h('div',{className:'ref-item-details'},h('strong',{},r.name),h('span',{},r.craftName||'Рецепт KCD2')))}
+ recipeRow(r){
+  const many=(r.variants||1)>1;
+  const lvl=many&&r.levelMin!=null&&r.levelMax!=null&&r.levelMin!==r.levelMax?'Ур. '+r.levelMin+'–'+r.levelMax:'Ур. '+(r.level??'—');
+  return h(Link,{key:r.id,to:'/game/recipe/'+r.id,className:'game-result ref-item-card'},h('div',{className:'ref-item-art'},h('span',{className:'ref-item-id'},lvl),
+   many?h('span',{className:'ref-item-variants',title:'Вариантов рецепта: '+r.variants},'× '+fmtCount(r.variants)):null,
+   r.outputImageUrl?h('img',{src:wikiUrl(r.outputImageUrl),alt:'',loading:'lazy'}):h('span',{className:'ref-art-placeholder'},h(Icon,{name:'hammer'}))),h('div',{className:'ref-item-details'},h('strong',{},r.name),h('span',{},r.craftName||'Рецепт KCD2')))}
  field(name,val){return h('div',{className:'game-field'},h('small',{},name),h('strong',{},val==null?'—':val));}
+ recipeVariants(r){
+  const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
+  const base=list.find(v=>v.id===r.id)||{};
+  const selId=this.state.variantSel||r.id;
+  const sel=list.find(v=>v.id===selId)||list.find(v=>v.id===r.id)||list[0];
+  const meta=[sel.level!=null?'Ур. '+sel.level:null,'× '+(sel.amount||1),sel.fee!=null?fmtPrice(sel.fee):null,sel.xp!=null?'+'+sel.xp+' оп.':null].filter(Boolean).join(' · ');
+  const differs=sel.ingredients!==base.ingredients;
+  return h('section',{className:'game-detail-block game-item-variants'},
+    h('h2',{},'Варианты рецепта · '+fmtCount(list.length)),
+    h('p',{className:'game-variants-hint'},'Один и тот же рецепт встречается с разными уровнями мастерства и материалами. Нажмите на квадратик, чтобы сравнить. Текущий отмечен рамкой.'),
+    h('div',{className:'game-variant-squares'},list.map(v=>h('button',{
+      key:v.id,type:'button',
+      className:'game-variant-square'+(v.id===r.id?' current':'')+(v.id===sel.id?' selected':''),
+      title:'Уровень '+(v.level??'—')+' · '+v.ingredients,
+      onClick:()=>this.setState({variantSel:v.id})},
+      v.outputImageUrl?h('img',{src:wikiUrl(v.outputImageUrl),alt:'',loading:'lazy'}):h('span',{},'◈'),
+      h('em',{className:'game-variant-num'},'ур.'+(v.level??'—'))))),
+    h('div',{className:'game-variant-panel'+(sel.id===r.id?' is-current':'')},
+      h('div',{className:'game-variant-panel-head'},
+        h('strong',{},sel.name),
+        sel.id===r.id?h('em',{className:'game-variant-badge'},'текущий'):h(Link,{className:'game-variant-open',to:'/game/recipe/'+sel.id},'Открыть рецепт →'),
+        h('small',{className:'game-variant-meta'},meta||'—')),
+      h('small',{className:'game-variant-code'},sel.id),
+      h('small',{className:'game-variant-craft'+(sel.id!==r.id&&differs?' differs':'')},'Материалы: ',sel.ingredients||'не перечислены',sel.id!==r.id&&differs?' — отличаются от текущего':'')));}
  itemVariants(item){
   const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
   const baseCraft=(list.find(v=>v.id===item.id)||{}).craft;
@@ -223,6 +252,7 @@ class GameCatalogPage extends React.Component{
        this.field('Ремесло',r.craftName),this.field('Требуемый уровень',r.level??'—'),this.field('Выход изделий','× '+(r.amount||1)),
        this.field('Время',r.seconds==null?'—':r.seconds+' сек.'),this.field('Плата',fmtPrice(r.fee)),this.field('Опыт',r.xp==null?'—':'+'+r.xp))),
      h('section',{className:'game-detail-block'},h('h2',{},'Результат'),h('div',{className:'game-ingredients'},(r.outputs||[]).map((g,i)=>h('div',{className:'game-ingredient',key:i},h('span',{className:'game-ing-icon'},g.imageUrl?h('img',{src:wikiUrl(g.imageUrl),alt:'',loading:'lazy'}):'✧'),h('strong',{},h(WikiItemLink,{item:g})),h('small',{},'× '+(r.amount||1))))))),
+   this.recipeVariants(r),
    h('section',{className:'game-detail-block game-recipe-resources'},h('h2',{},'Необходимые материалы'),r.ingredients.length?h('div',{className:'game-ingredients'},r.ingredients.map((g,i)=>h('div',{className:'game-ingredient',key:i},h('span',{className:'game-ing-icon'},g.imageUrl?h('img',{src:wikiUrl(g.imageUrl),alt:'',loading:'lazy'}):'◈'),h('strong',{},h(WikiItemLink,{item:g})),h('small',{},'× '+g.amount)))):h('p',{},'Материалы в источнике не перечислены.')),
    h('div',{className:'game-source-note'},h('span',{},'ⓘ'),h('p',{},'Идентификатор рецепта: ',h('code',{},r.id),' · Данные справочные, получены из экспортированных таблиц игрового режима.')),this.note());
  }
