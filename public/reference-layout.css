@@ -198,3 +198,29 @@ body::before{height:3px}
 .article-gallery-meta strong{font-size:16px;color:var(--wiki-text-primary)}
 .article-gallery-meta span{font-size:13.5px;color:var(--wiki-text-secondary)}
 
+
+/* Compact item detail page */
+.game-item-hero{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;align-items:stretch;margin:0 0 14px}
+.game-item-hero .wiki-item-art{flex-direction:column;align-items:center;text-align:center;gap:12px;margin:0;padding:18px 16px;background:var(--ui-surface);border:1px solid var(--ui-border);border-radius:12px}
+.game-item-hero .wiki-item-art>img,.game-item-hero .wiki-item-no-art{width:150px;height:150px;background:var(--ui-hover,rgba(127,127,127,.08));border:1px solid var(--ui-border);padding:10px}
+.game-item-hero .wiki-item-art-info{align-items:center;text-align:center;gap:6px}
+.game-item-hero .wiki-item-art-info strong{font-size:18px;color:var(--wiki-text-primary)}
+.game-item-hero .wiki-item-art-info small{font-size:12.5px;color:var(--wiki-text-secondary)}
+.game-item-hero .wiki-item-image-source{margin-top:auto}
+.game-item-hero .game-item-info{margin:0;padding:18px 20px}
+.game-item-hero .game-item-info h2{font-size:22px;margin:0 0 12px}
+.game-item-hero .game-fields{grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:9px}
+.game-item-hero .game-field{padding:9px 12px;gap:3px;border-radius:8px}
+.game-item-hero .game-field small{font-size:12.5px}
+.game-item-hero .game-field strong{font-size:16px}
+.game-item-hero .game-field code{font-size:13px}
+.game-page .game-copy-row .extra-copy{font-size:14.5px;padding:7px 13px}
+.game-item-stats{padding:18px 20px}
+.game-item-stats h2{font-size:22px;margin:0 0 12px}
+.game-item-stats .game-stats-group h3{font-size:15px;margin:10px 0 8px;color:var(--wiki-text-secondary);letter-spacing:.06em;text-transform:uppercase}
+.game-item-stats .game-fields{grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px}
+.game-item-stats .game-field{padding:8px 11px;gap:2px;border-radius:8px}
+.game-item-stats .game-field small{font-size:12px}
+.game-item-stats .game-field strong{font-size:15.5px}
+.game-page .game-relation h2{font-size:24px}
+@media(max-width:900px){.game-item-hero{grid-template-columns:1fr}}
