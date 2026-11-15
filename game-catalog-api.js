@@ -80,7 +80,14 @@ async function handle(req,res,u,ctx){
   if(itemDetail){
     const item=d._itemById.get(itemDetail[1].toLowerCase());if(!item)return answer(res,404,{error:'Предмет не найден'}),true;
     const related=d.recipes.filter(r=>r.outputs.some(g=>g.id===item.id)||r.ingredients.some(g=>g.id===item.id)).slice(0,40).map(recipeSummary);
-    return answer(res,200,{item:itemSummary(item),related,meta:basicMeta(d)}),true;
+    const twins=d.items.filter(row=>row.name===item.name&&row.category===item.category);
+    const variants=twins.length>1?twins.map(v=>{
+      const recipe=d.recipes.find(r=>r.outputs.some(o=>o.id===v.id));
+      return {id:v.id,name:v.name,internal:v.internal,gamePrice:v.gamePrice,referencePrice:v.referencePrice,
+        weight:v.weight,damage:v.damage,imageUrl:extras.imageListUrl(v.id),
+        craft:recipe?{id:recipe.id,craftName:recipe.craftName,level:recipe.level,ingredients:recipe.ingredients.map(g=>(g.amount>1?g.amount+'× ':'')+g.name).join(' + ')}:null};
+    }):[];
+    return answer(res,200,{item:itemSummary(item),variants,related,meta:basicMeta(d)}),true;
   }
   const recipeDetail=pathname.match(/^\/api\/game\/recipes\/([a-zA-Z0-9_-]{1,140})$/);
   if(recipeDetail){const recipe=d._recipeById.get(recipeDetail[1]);if(!recipe)return answer(res,404,{error:'Рецепт не найден'}),true;return answer(res,200,{recipe:{...recipe,
@@ -105,7 +112,16 @@ async function handle(req,res,u,ctx){
       'price-desc':(a,b)=>(price(b)??-1)-(price(a)??-1),'price-asc':(a,b)=>(price(a)??Infinity)-(price(b)??Infinity),
       'weight-desc':(a,b)=>(b.weight??-1)-(a.weight??-1),'weight-asc':(a,b)=>(a.weight??Infinity)-(b.weight??Infinity)}[sort];
     if(cmp)indices.sort(cmp);
-    return answer(res,200,{...pageOf(indices,u.searchParams),rows:pageOf(indices,u.searchParams).rows.map(x=>{const row=itemSummary(x);delete row.stats;return row;}),meta:basicMeta(d)}),true;
+    const seen=new Map();const grouped=[];
+    for(const item of indices){
+      const key=item.name+'\u0000'+item.category;
+      const p=price(item);
+      const g=seen.get(key);
+      if(!g){const entry={item,count:1,min:p,max:p};seen.set(key,entry);grouped.push(entry);}
+      else{g.count++;if(p!=null){g.min=g.min==null?p:Math.min(g.min,p);g.max=g.max==null?p:Math.max(g.max,p);}}
+    }
+    const page=pageOf(grouped,u.searchParams);
+    return answer(res,200,{...page,rows:page.rows.map(g=>{const row=itemSummary(g.item);delete row.stats;row.variants=g.count;row.priceMin=g.min;row.priceMax=g.max;return row;}),meta:basicMeta(d)}),true;
   }
   if(pathname==='/api/game/recipes'){
     const q=searchText(u.searchParams.get('q'));const craft=u.searchParams.get('craft')||'';

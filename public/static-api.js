@@ -146,8 +146,16 @@
         (role !== 'priced' || item.referencePrice != null)
       );
       sortItems(rows, sort);
-      const page = pageOf(rows, query);
-      return json({ ...page, rows: page.rows.map(item => itemSummary(item, game, matches)), meta: game.meta });
+      const seen = new Map(); const grouped = [];
+      for (const item of rows) {
+        const key = item.name + '\u0000' + item.category;
+        const price = item.gamePrice ?? item.referencePrice;
+        const g = seen.get(key);
+        if (!g) { const entry = { item, count: 1, min: price, max: price }; seen.set(key, entry); grouped.push(entry); }
+        else { g.count++; if (price != null) { g.min = g.min == null ? price : Math.min(g.min, price); g.max = g.max == null ? price : Math.max(g.max, price); } }
+      }
+      const page = pageOf(grouped, query);
+      return json({ ...page, rows: page.rows.map(g => ({ ...itemSummary(g.item, game, matches), variants: g.count, priceMin: g.min, priceMax: g.max })), meta: game.meta });
     }
     if (path === '/api/game/recipes') {
       const { game, matches } = await gameData();
@@ -172,7 +180,14 @@
       if (!found) return json({ error: 'Предмет не найден' }, 404);
       const related = game.recipes.filter(recipe => recipe.outputs.some(row => row.id === found.id) || recipe.ingredients.some(row => row.id === found.id)).slice(0, 40);
       const stats = await load('item-stats').then(data => data.items[found.id.toLowerCase()] || []).catch(() => []);
-      return json({ item: { ...itemSummary(found, game, matches), stats }, related: related.map(recipe => recipeSummary(recipe, game, matches)), meta: game.meta });
+      const twins = game.items.filter(row => row.name === found.name && row.category === found.category);
+      const variants = twins.length > 1 ? twins.map(v => {
+        const recipe = game.recipes.find(r => r.outputs.some(o => o.id === v.id));
+        return { id: v.id, name: v.name, internal: v.internal, gamePrice: v.gamePrice, referencePrice: v.referencePrice,
+          weight: v.weight, damage: v.damage, imageUrl: itemImage(v.id, game, matches),
+          craft: recipe ? { id: recipe.id, craftName: recipe.craftName, level: recipe.level, ingredients: recipe.ingredients.map(g => (g.amount > 1 ? g.amount + '× ' : '') + g.name).join(' + ') } : null };
+      }) : [];
+      return json({ item: { ...itemSummary(found, game, matches), stats }, variants, related: related.map(recipe => recipeSummary(recipe, game, matches)), meta: game.meta });
     }
     const recipe = path.match(/^\/api\/game\/recipes\/([^/]+)$/);
     if (recipe) {
