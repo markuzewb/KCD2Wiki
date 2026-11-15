@@ -99,7 +99,6 @@ class GameCatalogPage extends React.Component{
  }
  intro(title,desc,label){return h('div',{className:'game-title'},h('span',{className:'page-overline'},label||'БАЗА ДАННЫХ KCD2RP'),
    h('h1',{},title),h('p',{},desc));}
- note(){const source=this.state.meta?.sourceArchive||'серверного экспорта KCD2RP';return h('div',{className:'game-source-note'},h('span',{},'ⓘ'),h('p',{},'Источник: ',source,'. Справочные цены — не цены магазина. Дополнительные рецепты требуют проверки GUID игровым сервером.'));}
  loading(){return h('div',{className:'game-placeholder'},'Загрузка данных из игрового каталога…');}
  failed(){return h('div',{className:'game-placeholder error'},this.state.error,h('button',{onClick:()=>this.load()},'Повторить'));}
  catalog(){
@@ -213,20 +212,17 @@ class GameCatalogPage extends React.Component{
    this.itemVariants(item),
    this.itemStats(item),
      this.state.related.length?h('section',{className:'game-relation'},h('h2',{},'Рецепты с этим предметом'),h('div',{className:'game-results'},this.state.related.map(r=>this.recipeRow(r)))):h('div',{className:'game-placeholder'},'В доступных экспортированных рецептах предмет не упоминается.'),
-   h('div',{className:'game-source-note'},h('span',{},'ⓘ'),h('p',{},'Название — русский экспорт KCD2. Характеристики и базовая цена — таблицы предметов KCD2 (item.xml). Справочная цена получена из таблиц крафта и не равна фактической цене покупки или продажи на сервере.')));
+   null);
  }
  recipeDetail(){const r=this.state.recipe;if(this.state.error)return this.failed();if(!r)return this.loading();
- const candidate=r.kind==='catalog-candidate';return h('div',{className:'page game-page'},h('div',{className:'game-back'},h(Link,{to:'/game/recipes'},'← Все рецепты')),
-   this.intro(r.name,r.craftName+' · '+kindLabels[r.kind],'КАРТОЧКА РЕЦЕПТА'),
-   candidate&&h('div',{className:'game-alert'},'◈ Дополнительный рецепт находится в экспортированном каталоге, но его доступность зависит от успешной проверки GUID на работающем сервере.'),
-   h('div',{className:'game-detail-grid'},
-     h('section',{className:'game-detail-block'},h('h2',{},'Изготовление'),h('div',{className:'game-fields'},
+ const out=(r.outputs||[])[0];return h('div',{className:'page game-page'},h('div',{className:'game-back'},h(Link,{to:'/game/recipes'},'← Все рецепты')),
+   this.intro(r.name,r.craftName,'КАРТОЧКА РЕЦЕПТА'),
+   h('section',{className:'game-detail-block'},h('h2',{},'Изготовление'),h('div',{className:'game-fields'},
+       out?this.field('Изделие',h(WikiItemLink,{item:out})):null,
        this.field('Ремесло',r.craftName),this.field('Требуемый уровень',r.level??'—'),this.field('Выход изделий','× '+(r.amount||1)),
        this.field('Время',r.seconds==null?'—':r.seconds+' сек.'),this.field('Плата',fmtPrice(r.fee)),this.field('Опыт',r.xp==null?'—':'+'+r.xp))),
-     h('section',{className:'game-detail-block'},h('h2',{},'Результат'),h('div',{className:'game-ingredients'},(r.outputs||[]).map((g,i)=>h('div',{className:'game-ingredient',key:i},h('span',{className:'game-ing-icon'},g.imageUrl?h('img',{src:wikiUrl(g.imageUrl),alt:'',loading:'lazy'}):'✧'),h('strong',{},h(WikiItemLink,{item:g})),h('small',{},'× '+(r.amount||1))))))),
    this.recipeVariants(r),
-   h('section',{className:'game-detail-block game-recipe-resources'},h('h2',{},'Необходимые материалы'),r.ingredients.length?h('div',{className:'game-ingredients'},r.ingredients.map((g,i)=>h('div',{className:'game-ingredient',key:i},h('span',{className:'game-ing-icon'},g.imageUrl?h('img',{src:wikiUrl(g.imageUrl),alt:'',loading:'lazy'}):'◈'),h('strong',{},h(WikiItemLink,{item:g})),h('small',{},'× '+g.amount)))):h('p',{},'Материалы в источнике не перечислены.')),
-   h('div',{className:'game-source-note'},h('span',{},'ⓘ'),h('p',{},'Идентификатор рецепта: ',h('code',{},r.id),' · Данные справочные, получены из экспортированных таблиц игрового режима.')),this.note());
+   h('section',{className:'game-detail-block game-recipe-resources'},h('h2',{},'Необходимые материалы'),r.ingredients.length?h('div',{className:'game-ingredients'},r.ingredients.map((g,i)=>h('div',{className:'game-ingredient',key:i},h('span',{className:'game-ing-icon'},g.imageUrl?h('img',{src:wikiUrl(g.imageUrl),alt:'',loading:'lazy'}):'◈'),h('strong',{},h(WikiItemLink,{item:g})),h('small',{},'× '+g.amount)))):h('p',{},'Материалы в источнике не перечислены.')));
  }
  render(){if(this.props.mode==='item')return this.itemDetail();if(this.props.mode==='recipe')return this.recipeDetail();return this.catalog();}
 }
