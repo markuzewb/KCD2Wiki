@@ -224,3 +224,21 @@ body::before{height:3px}
 .game-item-stats .game-field strong{font-size:15.5px}
 .game-page .game-relation h2{font-size:24px}
 @media(max-width:900px){.game-item-hero{grid-template-columns:1fr}}
+
+/* Item variants */
+.ref-item-variants{position:absolute;bottom:6px;right:6px;z-index:1;padding:2px 8px;border-radius:999px;background:var(--wiki-accent-primary,#d30756);color:#fff;font-size:12px;font-weight:800;letter-spacing:.02em}
+.game-item-variants{margin:0 0 14px;padding:18px 20px}
+.game-item-variants h2{font-size:22px;margin:0 0 6px}
+.game-variants-hint{margin:0 0 12px;font-size:14.5px;color:var(--wiki-text-secondary)}
+.game-variant{align-items:flex-start}
+.game-variant.current{border-color:var(--wiki-accent-primary);box-shadow:0 0 0 1px var(--wiki-accent-primary) inset}
+.game-variant-main{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.game-variant-main strong{font-size:16.5px}
+.game-variant-badge{font-style:normal;margin-left:8px;padding:2px 8px;border-radius:999px;background:var(--wiki-accent-primary);color:#fff;font-size:11.5px;font-weight:800;vertical-align:2px}
+.game-variant-code{font:12.5px Consolas,monospace;color:var(--wiki-text-secondary);overflow-wrap:anywhere}
+.game-variant-craft{font-size:13.5px;color:var(--wiki-text-secondary)}
+.game-variant-craft a{color:inherit;text-decoration:underline dotted}
+.game-variant-craft.differs{color:var(--wiki-accent-primary)}
+.game-variant-craft.differs a{color:var(--wiki-accent-primary)}
+.game-variant-meta{white-space:nowrap;font-size:14px;color:var(--wiki-text-primary)}
+@media(max-width:700px){.game-variant-meta{white-space:normal}}

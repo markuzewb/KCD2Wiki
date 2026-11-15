@@ -75,7 +75,7 @@ function WikiCatalogPager({page,total,pages,onChange}){
    h('button',{type:'button',disabled:page>=pages,onClick:()=>onChange(Math.min(pages,page+1))},'Далее →'));
 }
 class GameCatalogPage extends React.Component{
- constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
+ constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
  componentDidMount(){this.load();}
  componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
  componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;}
@@ -93,7 +93,7 @@ class GameCatalogPage extends React.Component{
    url='/api/game/'+mode+'?'+q.toString();}
   this.setState({loading:true,error:''});
   try{const res=await wikiFetch(url);const body=await res.json();if(!res.ok)throw Error(body.error||'Не удалось открыть каталог');if(this._seq!==seq)return;
-   this.setState({loading:false,rows:body.rows||[],item:body.item||null,related:body.related||[],recipe:body.recipe||null,
+   this.setState({loading:false,rows:body.rows||[],item:body.item||null,related:body.related||[],variants:body.variants||[],recipe:body.recipe||null,
       total:body.total||0,pages:body.pages||1,meta:body.meta||this.state.meta,error:''});
   }catch(e){if(this._seq!==seq)return;this.setState({loading:false,error:e.message});}
  }
@@ -143,17 +143,39 @@ class GameCatalogPage extends React.Component{
  copy(text,marker){if(!text)return;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).catch(()=>{});else{const el=document.createElement('textarea');el.value=text;document.body.append(el);el.select();document.execCommand('copy');el.remove();}
   if(marker){clearTimeout(this._copyTimer);this.setState({copied:marker});this._copyTimer=setTimeout(()=>this.setState({copied:''}),1300);}}
  itemRow(item){
+  const many=(item.variants||1)>1;
   const price=item.gamePrice??item.referencePrice;
-  const metaLine=[price!=null?fmtPrice(price):null,fmtWeight(item.weight),item.damage?'⚔ '+fmtCount(item.damage):null].filter(Boolean).join(' · ');
+  const priceText=many&&item.priceMin!=null&&item.priceMax!=null&&item.priceMin!==item.priceMax
+    ?fmtCount(item.priceMin)+'–'+fmtCount(item.priceMax)+' гр.'
+    :(price!=null?fmtPrice(price):(many&&item.priceMin!=null?fmtPrice(item.priceMin):null));
+  const metaLine=[priceText,fmtWeight(item.weight),item.damage?'⚔ '+fmtCount(item.damage):null].filter(Boolean).join(' · ');
   const cls=item.internal||item.english||'';
   return h(Link,{key:item.id,to:'/game/item/'+item.id,className:'game-result ref-item-card'},
    h('div',{className:'ref-item-art'},
      h('span',{className:'ref-item-id'},item.id&&item.id.length>13?item.id.slice(0,8):item.id),
      cls?h('button',{className:'ref-item-copy',title:'Скопировать класснейм: '+cls,'aria-label':'Скопировать класснейм',onClick:e=>{e.preventDefault();e.stopPropagation();this.copy(cls,item.id);}},this.state.copied===item.id?'✓':'⧉'):null,
+     many?h('span',{className:'ref-item-variants',title:'Вариантов предмета: '+item.variants},'× '+fmtCount(item.variants)):null,
      h('img',{src:wikiUrl(item.imageUrl||'/icons/game/_placeholder.webp'),alt:'',loading:'lazy'})),
    h('div',{className:'ref-item-details'},h('strong',{},item.name),h('span',{},metaLine||item.english||item.internal||'Предмет KCD2')))}
  recipeRow(r){return h(Link,{key:r.id,to:'/game/recipe/'+r.id,className:'game-result ref-item-card'},h('div',{className:'ref-item-art'},h('span',{className:'ref-item-id'},'Ур. '+(r.level??'—')),r.outputImageUrl?h('img',{src:wikiUrl(r.outputImageUrl),alt:'',loading:'lazy'}):h('span',{className:'ref-art-placeholder'},h(Icon,{name:'hammer'}))),h('div',{className:'ref-item-details'},h('strong',{},r.name),h('span',{},r.craftName||'Рецепт KCD2')))}
  field(name,val){return h('div',{className:'game-field'},h('small',{},name),h('strong',{},val==null?'—':val));}
+ itemVariants(item){
+  const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
+  const baseCraft=(list.find(v=>v.id===item.id)||{}).craft;
+  return h('section',{className:'game-detail-block game-item-variants'},
+    h('h2',{},'Варианты предмета · '+fmtCount(list.length)),
+    h('p',{className:'game-variants-hint'},'Предметы с одинаковым названием, но разными кодами, ценой или рецептом. Текущий вариант подсвечен.'),
+    h('div',{className:'game-ingredients'},list.map(v=>{
+      const meta=[fmtPrice(v.gamePrice??v.referencePrice),fmtWeight(v.weight),v.damage?'⚔ '+fmtCount(v.damage):null].filter(Boolean).join(' · ');
+      const craftDiffers=v.craft&&(!baseCraft||v.craft.ingredients!==baseCraft.ingredients);
+      return h('div',{className:'game-ingredient game-variant'+(v.id===item.id?' current':''),key:v.id},
+        h('span',{className:'game-ing-icon'},v.imageUrl?h('img',{src:wikiUrl(v.imageUrl),alt:'',loading:'lazy'}):'◈'),
+        h('div',{className:'game-variant-main'},
+          h('strong',{},v.id===item.id?h('span',{},v.name,h('em',{className:'game-variant-badge'},'текущий')):h(Link,{to:'/game/item/'+v.id},v.name)),
+          h('small',{className:'game-variant-code'},v.internal||v.id),
+          v.craft?h('small',{className:'game-variant-craft'+(craftDiffers?' differs':'')},'Крафт ('+v.craft.craftName+(v.craft.level?', ур. '+v.craft.level:'')+'): ',h(Link,{to:'/game/recipe/'+v.craft.id},v.craft.ingredients)):null),
+        h('small',{className:'game-variant-meta'},meta||'—'));
+    })));}
  itemStats(item){const stats=item&&item.stats;if(!Array.isArray(stats)||!stats.length)return null;
   const groups=new Map();for(const row of stats){const g=row[3]||'общее';if(!groups.has(g))groups.set(g,[]);groups.get(g).push(row);}
   return h('section',{className:'game-detail-block game-item-stats'},h('h2',{},'Игровые характеристики'),
@@ -178,6 +200,7 @@ class GameCatalogPage extends React.Component{
        this.field('Используется в рецептах',fmtCount(item.recipeUses)),
        this.field('Внутренний код',h('code',{},item.internal||'—')),
        this.field('GUID',h('code',{},item.id))))),
+   this.itemVariants(item),
    this.itemStats(item),
      this.state.related.length?h('section',{className:'game-relation'},h('h2',{},'Рецепты с этим предметом'),h('div',{className:'game-results'},this.state.related.map(r=>this.recipeRow(r)))):h('div',{className:'game-placeholder'},'В доступных экспортированных рецептах предмет не упоминается.'),
    h('div',{className:'game-source-note'},h('span',{},'ⓘ'),h('p',{},'Название — русский экспорт KCD2. Характеристики и базовая цена — таблицы предметов KCD2 (item.xml). Справочная цена получена из таблиц крафта и не равна фактической цене покупки или продажи на сервере.')));
