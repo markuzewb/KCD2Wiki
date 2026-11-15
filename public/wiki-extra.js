@@ -30,7 +30,7 @@ class Animations extends React.Component{
  toggle(key,value){this.change(key,this.state[key]===value?'':value);}
  resetFilters(){this.setState({...ANIM_EMPTY,page:1},()=>this.search());}
  page(n){this.setState({page:n},()=>this.search());}
- detail(clip){this.setState({detail:null,error:''});wikiFetch('/api/animations/'+encodeURIComponent(clip)).then(errorMessage).then(d=>this.setState({detail:d.animation})).catch(e=>this.setState({error:e.message}));}
+ detail(clip){this.setState({detail:null,error:''},()=>{const el=document.querySelector('.extra-animation-detail');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});else window.scrollTo({top:0,behavior:'smooth'});});wikiFetch('/api/animations/'+encodeURIComponent(clip)).then(errorMessage).then(d=>this.setState({detail:d.animation})).catch(e=>this.setState({error:e.message}));}
  copy(clip){if(navigator.clipboard?.writeText)navigator.clipboard.writeText(clip).catch(()=>{});else{const input=document.createElement('textarea');input.value=clip;document.body.append(input);input.select();document.execCommand('copy');input.remove()}}
  chips(label,map,key){const s=this.state;return h('div',{className:'extra-chip-group',key:key},h('span',{className:'extra-chip-label'},label),Object.entries(map).map(([value,name])=>
    h('button',{key:value,className:'extra-chip'+(s[key]===value?' active':''),onClick:()=>this.toggle(key,value)},name)));}

@@ -75,7 +75,7 @@ function WikiCatalogPager({page,total,pages,onChange}){
    h('button',{type:'button',disabled:page>=pages,onClick:()=>onChange(Math.min(pages,page+1))},'Далее →'));
 }
 class GameCatalogPage extends React.Component{
- constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],variantSel:'',recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
+ constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
  componentDidMount(){this.load();}
  componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
  componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;}
@@ -93,7 +93,7 @@ class GameCatalogPage extends React.Component{
    url='/api/game/'+mode+'?'+q.toString();}
   this.setState({loading:true,error:''});
   try{const res=await wikiFetch(url);const body=await res.json();if(!res.ok)throw Error(body.error||'Не удалось открыть каталог');if(this._seq!==seq)return;
-   this.setState({loading:false,rows:body.rows||[],item:body.item||null,related:body.related||[],variants:body.variants||[],variantSel:'',recipe:body.recipe||null,
+   this.setState({loading:false,rows:body.rows||[],item:body.item||null,related:body.related||[],variants:body.variants||[],recipe:body.recipe||null,
       total:body.total||0,pages:body.pages||1,meta:body.meta||this.state.meta,error:''});
   }catch(e){if(this._seq!==seq)return;this.setState({loading:false,error:e.message});}
  }
@@ -166,54 +166,26 @@ class GameCatalogPage extends React.Component{
  field(name,val){return h('div',{className:'game-field'},h('small',{},name),h('strong',{},val==null?'—':val));}
  recipeVariants(r){
   const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
-  const base=list.find(v=>v.id===r.id)||{};
-  const selId=this.state.variantSel||r.id;
-  const sel=list.find(v=>v.id===selId)||list.find(v=>v.id===r.id)||list[0];
-  const meta=[sel.level!=null?'Ур. '+sel.level:null,'× '+(sel.amount||1),sel.fee!=null?fmtPrice(sel.fee):null,sel.xp!=null?'+'+sel.xp+' оп.':null].filter(Boolean).join(' · ');
-  const differs=sel.ingredients!==base.ingredients;
   return h('section',{className:'game-detail-block game-item-variants'},
-    h('h2',{},'Варианты рецепта · '+fmtCount(list.length)),
-    h('p',{className:'game-variants-hint'},'Один и тот же рецепт встречается с разными уровнями мастерства и материалами. Нажмите на квадратик, чтобы сравнить. Текущий отмечен рамкой.'),
-    h('div',{className:'game-variant-squares'},list.map(v=>h('button',{
-      key:v.id,type:'button',
-      className:'game-variant-square'+(v.id===r.id?' current':'')+(v.id===sel.id?' selected':''),
-      title:'Уровень '+(v.level??'—')+' · '+v.ingredients,
-      onClick:()=>this.setState({variantSel:v.id})},
-      v.outputImageUrl?h('img',{src:wikiUrl(v.outputImageUrl),alt:'',loading:'lazy'}):h('span',{},'◈'),
-      h('em',{className:'game-variant-num'},'ур.'+(v.level??'—'))))),
-    h('div',{className:'game-variant-panel'+(sel.id===r.id?' is-current':'')},
-      h('div',{className:'game-variant-panel-head'},
-        h('strong',{},sel.name),
-        sel.id===r.id?h('em',{className:'game-variant-badge'},'текущий'):h(Link,{className:'game-variant-open',to:'/game/recipe/'+sel.id},'Открыть рецепт →'),
-        h('small',{className:'game-variant-meta'},meta||'—')),
-      h('small',{className:'game-variant-code'},sel.id),
-      h('small',{className:'game-variant-craft'+(sel.id!==r.id&&differs?' differs':'')},'Материалы: ',sel.ingredients||'не перечислены',sel.id!==r.id&&differs?' — отличаются от текущего':'')));}
+    h('h2',{},'\u0412\u0430\u0440\u0438\u0430\u043d\u0442\u044b \u0440\u0435\u0446\u0435\u043f\u0442\u0430 \u00b7 '+fmtCount(list.length)),
+    h('p',{className:'game-variants-hint'},'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u0438\u043a\u043e\u043d\u043a\u0443 \u2014 \u0432\u0430\u0440\u0438\u0430\u043d\u0442 \u043e\u0442\u043a\u0440\u043e\u0435\u0442\u0441\u044f \u0441\u0440\u0430\u0437\u0443. \u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u043e\u0442\u043c\u0435\u0447\u0435\u043d \u0440\u0430\u043c\u043a\u043e\u0439.'),
+    h('div',{className:'game-variant-squares'},list.map(v=>h(Link,{
+      key:v.id,to:'/game/recipe/'+v.id,
+      className:'game-variant-square'+(v.id===r.id?' selected current':''),
+      title:'\u0423\u0440\u043e\u0432\u0435\u043d\u044c '+(v.level??'\u2014')+' \u00b7 '+(v.ingredients||'')},
+      v.outputImageUrl?h('img',{src:wikiUrl(v.outputImageUrl),alt:'',loading:'lazy'}):h('span',{},'\u25c8'),
+      h('em',{className:'game-variant-num'},'\u0443\u0440.'+(v.level??'\u2014'))))));}
  itemVariants(item){
   const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
-  const baseCraft=(list.find(v=>v.id===item.id)||{}).craft;
-  const selId=this.state.variantSel||item.id;
-  const sel=list.find(v=>v.id===selId)||list.find(v=>v.id===item.id)||list[0];
-  const meta=[fmtPrice(sel.gamePrice??sel.referencePrice),fmtWeight(sel.weight),sel.damage?'\u2694 '+fmtCount(sel.damage):null].filter(Boolean).join(' \u00b7 ');
-  const craftDiffers=sel.craft&&(!baseCraft||sel.craft.ingredients!==baseCraft.ingredients);
   return h('section',{className:'game-detail-block game-item-variants'},
     h('h2',{},'\u0412\u0430\u0440\u0438\u0430\u043d\u0442\u044b \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u0430 \u00b7 '+fmtCount(list.length)),
-    h('p',{className:'game-variants-hint'},'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u043a\u0432\u0430\u0434\u0440\u0430\u0442\u0438\u043a, \u0447\u0442\u043e\u0431\u044b \u0443\u0432\u0438\u0434\u0435\u0442\u044c \u0446\u0435\u043d\u0443 \u0438 \u043a\u0440\u0430\u0444\u0442 \u0432\u0430\u0440\u0438\u0430\u043d\u0442\u0430. \u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u043e\u0442\u043c\u0435\u0447\u0435\u043d \u0440\u0430\u043c\u043a\u043e\u0439.'),
-    h('div',{className:'game-variant-squares'},list.map((v,i)=>h('button',{
-      key:v.id,type:'button',
-      className:'game-variant-square'+(v.id===item.id?' current':'')+(v.id===sel.id?' selected':''),
-      title:(v.internal||v.id)+' \u00b7 '+fmtPrice(v.gamePrice??v.referencePrice),
-      onClick:()=>this.setState({variantSel:v.id})},
+    h('p',{className:'game-variants-hint'},'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u0438\u043a\u043e\u043d\u043a\u0443 \u2014 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0432\u0430\u0440\u0438\u0430\u043d\u0442\u0430 \u043e\u0442\u043a\u0440\u043e\u0435\u0442\u0441\u044f \u0441\u0440\u0430\u0437\u0443. \u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u043e\u0442\u043c\u0435\u0447\u0435\u043d \u0440\u0430\u043c\u043a\u043e\u0439.'),
+    h('div',{className:'game-variant-squares'},list.map((v,i)=>h(Link,{
+      key:v.id,to:'/game/item/'+v.id,
+      className:'game-variant-square'+(v.id===item.id?' selected current':''),
+      title:(v.internal||v.id)+' \u00b7 '+fmtPrice(v.gamePrice??v.referencePrice)+(v.craft?' \u00b7 '+v.craft.ingredients:'')},
       v.imageUrl?h('img',{src:wikiUrl(v.imageUrl),alt:'',loading:'lazy'}):h('span',{},'\u25c8'),
-      h('em',{className:'game-variant-num'},i+1)))),
-    h('div',{className:'game-variant-panel'+(sel.id===item.id?' is-current':'')},
-      h('div',{className:'game-variant-panel-head'},
-        h('strong',{},sel.name),
-        sel.id===item.id?h('em',{className:'game-variant-badge'},'\u0442\u0435\u043a\u0443\u0449\u0438\u0439'):h(Link,{className:'game-variant-open',to:'/game/item/'+sel.id},'\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0443 \u2192'),
-        h('small',{className:'game-variant-meta'},meta||'\u2014')),
-      h('small',{className:'game-variant-code'},sel.internal||sel.id),
-      sel.craft
-        ?h('small',{className:'game-variant-craft'+(craftDiffers?' differs':'')},'\u041a\u0440\u0430\u0444\u0442 ('+sel.craft.craftName+(sel.craft.level?', \u0443\u0440. '+sel.craft.level:'')+'): ',h(Link,{to:'/game/recipe/'+sel.craft.id},sel.craft.ingredients),craftDiffers?' \u2014 \u043e\u0442\u043b\u0438\u0447\u0430\u0435\u0442\u0441\u044f \u043e\u0442 \u0442\u0435\u043a\u0443\u0449\u0435\u0433\u043e':'')
-        :h('small',{className:'game-variant-craft'},'\u0420\u0435\u0446\u0435\u043f\u0442\u0430 \u0438\u0437\u0433\u043e\u0442\u043e\u0432\u043b\u0435\u043d\u0438\u044f \u0443 \u044d\u0442\u043e\u0433\u043e \u0432\u0430\u0440\u0438\u0430\u043d\u0442\u0430 \u043d\u0435\u0442.')));}
+      h('em',{className:'game-variant-num'},i+1)))));}
  itemStats(item){const stats=item&&item.stats;if(!Array.isArray(stats)||!stats.length)return null;
   const groups=new Map();for(const row of stats){const g=row[3]||'общее';if(!groups.has(g))groups.set(g,[]);groups.get(g).push(row);}
   return h('section',{className:'game-detail-block game-item-stats'},h('h2',{},'Игровые характеристики'),

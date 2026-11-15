@@ -88,7 +88,7 @@ writeJson('maps', { regions: regionInfo, markers: maps.markers, calibrated: fals
 // Cache busting: a content hash of the frontend bundle versions every asset URL,
 // so browsers pick up new scripts/styles right after each deployment.
 const crypto = await import('node:crypto');
-const bundleFiles = ['app.js', 'wiki-extra.js', 'wiki-icons.js', 'static-api.js', 'style.css', 'wiki-icons.css', 'majestic-reference.css', 'reference-layout.css'];
+const bundleFiles = ['app.js', 'wiki-extra.js', 'wiki-icons.js', 'static-api.js', 'style.css', 'wiki-icons.css', 'majestic-reference.css', 'reference-layout.css', 'compact.css'];
 const digest = crypto.createHash('sha256');
 for (const file of bundleFiles) digest.update(fs.readFileSync(path.join(publicDir, file)));
 const v = digest.digest('hex').slice(0, 10);
@@ -109,6 +109,7 @@ const html = `<!doctype html>
   <link rel="stylesheet" href="./wiki-icons.css?v=${v}">
   <link rel="stylesheet" href="./majestic-reference.css?v=${v}">
   <link rel="stylesheet" href="./reference-layout.css?v=${v}">
+  <link rel="stylesheet" href="./compact.css?v=${v}">
 </head>
 <body>
   <div id="app"><div class="loading">Загружаем летопись Богемии…</div></div>
