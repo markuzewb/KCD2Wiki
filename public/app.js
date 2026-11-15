@@ -217,12 +217,12 @@ class GameCatalogPage extends React.Component{
    h('section',{className:'game-detail-block'},h('h2',{},'Изготовление'),
      out?h('div',{className:'game-recipe-output'},
        h(Link,{to:out.id?'/game/item/'+out.id:'#',className:'game-recipe-output-art'},out.imageUrl?h('img',{src:wikiUrl(out.imageUrl),alt:out.name||'',loading:'lazy'}):h('span',{},'✧')),
-       h('div',{className:'game-recipe-output-info'},h('strong',{},h(WikiItemLink,{item:out})),h('small',{},'Изделие · × '+(r.amount||1)))):null,
+       h('div',{className:'game-recipe-output-info'},h('strong',{},h(WikiItemLink,{item:out}),out.id?h('button',{className:'game-field-copy',title:'Скопировать ID предмета для спавна: '+out.id,'aria-label':'Скопировать ID изделия',onClick:()=>this.copy(out.id,'out')},this.state.copied==='out'?'✓':'⧉'):null),h('small',{},'Изделие · × '+(r.amount||1)))):null,
      h('div',{className:'game-fields'},
        this.field('Ремесло',r.craftName),this.field('Требуемый уровень',r.level??'—'),this.field('Выход изделий','× '+(r.amount||1)),
        this.field('Время',r.seconds==null?'—':r.seconds+' сек.'),this.field('Плата',fmtPrice(r.fee)),this.field('Опыт',r.xp==null?'—':'+'+r.xp))),
    this.recipeVariants(r),
-   h('section',{className:'game-detail-block game-recipe-resources'},h('h2',{},'Необходимые материалы'),r.ingredients.length?h('div',{className:'game-ingredients'},r.ingredients.map((g,i)=>h('div',{className:'game-ingredient',key:i},h('span',{className:'game-ing-icon'},g.imageUrl?h('img',{src:wikiUrl(g.imageUrl),alt:'',loading:'lazy'}):'◈'),h('strong',{},h(WikiItemLink,{item:g})),h('small',{},'× '+g.amount)))):h('p',{},'Материалы в источнике не перечислены.')));
+   h('section',{className:'game-detail-block game-recipe-resources'},h('h2',{},'Необходимые материалы'),r.ingredients.length?h('div',{className:'game-ingredients'},r.ingredients.map((g,i)=>h('div',{className:'game-ingredient',key:i},h('span',{className:'game-ing-icon'},g.imageUrl?h('img',{src:wikiUrl(g.imageUrl),alt:'',loading:'lazy'}):'◈'),h('strong',{},h(WikiItemLink,{item:g})),g.id?h('button',{className:'game-field-copy',title:'Скопировать ID предмета для спавна: '+g.id,'aria-label':'Скопировать ID предмета',onClick:()=>this.copy(g.id,'ing'+i)},this.state.copied==='ing'+i?'✓':'⧉'):null,h('small',{},'× '+g.amount)))):h('p',{},'Материалы в источнике не перечислены.')));
  }
  render(){if(this.props.mode==='item')return this.itemDetail();if(this.props.mode==='recipe')return this.recipeDetail();return this.catalog();}
 }

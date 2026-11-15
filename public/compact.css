@@ -197,3 +197,6 @@ body{font-size:15.5px;line-height:1.5}
 .game-recipe-output-info strong{font-size:15px}
 .game-recipe-output-info strong a:hover{color:var(--wiki-accent-primary)}
 .game-recipe-output-info small{font-size:11.5px;color:var(--wiki-text-secondary)}
+.game-ingredient .game-field-copy{margin-left:auto}
+.game-ingredient small{flex:none}
+.game-recipe-output-info strong{display:inline-flex;align-items:center;gap:8px}
