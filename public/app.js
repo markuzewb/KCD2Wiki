@@ -110,9 +110,11 @@ class GameCatalogPage extends React.Component{
   const itemChips=isItem&&h('div',{className:'extra-chips ref-item-chips'},
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Категория'),
       (st.meta?.itemCategories||[]).map(c=>chip(st.cat===c[0],()=>this.setState({cat:st.cat===c[0]?'':c[0],sub:'',page:1},()=>this.load()),(c[3]?c[3]+' ':'')+c[1]+' · '+fmtCount(c[2]),c[0]))),
-    subcats.length>1?h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
-      chip(!st.sub,()=>this.filter('sub',''),'Все · '+fmtCount(catRow?catRow[2]:0),'all-subs'),
-      subcats.map(s=>chip(st.sub===s[0],()=>this.filter('sub',st.sub===s[0]?'':s[0]),s[0]+' · '+fmtCount(s[1]),s[0]))):null,
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
+      subcats.length?[
+        chip(!st.sub,()=>this.filter('sub',''),'Все · '+fmtCount(catRow?catRow[2]:0),'all-subs'),
+        ...subcats.map(s=>chip(st.sub===s[0],()=>this.filter('sub',st.sub===s[0]?'':s[0]),s[0]+' · '+fmtCount(s[1]),s[0]))
+      ]:h('span',{className:'extra-chip-hint',key:'hint'},'Выберите категорию выше — здесь появятся её подкатегории')),
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Фильтр'),
       [['result','Результаты изготовления'],['ingredient','Ингредиенты'],['priced','Со справочной ценой']].map(v=>chip(st.role===v[0],()=>this.filter('role',st.role===v[0]?'all':v[0]),v[1],v[0]))),
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
