@@ -48,7 +48,16 @@ function get(){
  }
  return cache;
 }
-function basicMeta(d){return {...d.meta,sourceHashes:undefined};}
+function recipeSubOf(d,r){const out=r.output?.id&&d._itemById.get(r.output.id.toLowerCase());return (out&&out.subName)||'Прочее';}
+function recipeSubcatsOf(d){
+ if(!d._recipeSubcats){
+  const subs={};
+  for(const r of d.recipes){const s=recipeSubOf(d,r);(subs[r.craft]=subs[r.craft]||{})[s]=(subs[r.craft][s]||0)+1;}
+  d._recipeSubcats=Object.fromEntries(Object.entries(subs).map(([craft,m])=>[craft,Object.entries(m).sort((a,b)=>b[1]-a[1])]));
+ }
+ return d._recipeSubcats;
+}
+function basicMeta(d){return {...d.meta,recipeSubcats:recipeSubcatsOf(d),sourceHashes:undefined};}
 function pageOf(rows,q){const page=range(q.get('page'),1,10000,1),limit=range(q.get('limit'),1,80,24);return {page,limit,total:rows.length,pages:Math.max(1,Math.ceil(rows.length/limit)),rows:rows.slice((page-1)*limit,page*limit)};}
 function itemSummary(item){const custom=extras.imageUrl(item.id);return {...item,imageUrl:custom||icons.itemImageUrl(item.id),iconMatch:custom?null:icons.itemInfo(item.id)?.match||null}}
 function recipeSummary(r){return {id:r.id,name:r.name,kind:r.kind,craft:r.craft,craftName:r.craftName,level:r.level,amount:r.amount,output:r.output,ingredientsCount:r.ingredients.length,outputImageUrl:r.output?.id?extras.imageListUrl(r.output.id):null};}
@@ -134,6 +143,7 @@ async function handle(req,res,u,ctx){
   if(pathname==='/api/game/recipes'){
     const q=searchText(u.searchParams.get('q'));const craft=u.searchParams.get('craft')||'';
     const kind=u.searchParams.get('kind')||'';const level=u.searchParams.get('level')||'';
+    const sub=u.searchParams.get('sub')||'';
     const sort=u.searchParams.get('sort')||'';
     let rows=[];
     for(let i=0;i<d.recipes.length;i++){
@@ -141,6 +151,7 @@ async function handle(req,res,u,ctx){
       if(craft&&r.craft!==craft)continue;
       if(kind&&r.kind!==kind)continue;
       if(level&&String(r.level)!==level)continue;
+      if(sub&&recipeSubOf(d,r)!==sub)continue;
       rows.push(r);
     }
     const cmp={'name-desc':(a,b)=>String(b.name).localeCompare(String(a.name),'ru'),
