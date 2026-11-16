@@ -201,3 +201,11 @@ body{font-size:15.5px;line-height:1.5}
 .game-ingredient small{flex:none}
 .game-recipe-output-info strong{display:inline-flex;align-items:center;gap:8px}
 .extra-chip-hint{font-size:12.5px;color:var(--wiki-text-secondary);padding:3px 0}
+.ref-home-group{margin:26px 0 0}
+.ref-home-group h2{font-size:21px;margin:0 0 2px}
+.ref-home-group p{font-size:13.5px}
+.ref-home-group+.ref-categories-grid{margin-top:11px}
+.ref-category-count{flex:none;font-size:12px;font-weight:700;color:var(--wiki-text-secondary);background:var(--wiki-bg-secondary);border:1px solid var(--ui-border);border-radius:999px;padding:1px 8px;line-height:1.5}
+.ref-category-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.ref-category-tags i{font-style:normal;font-size:12px;color:var(--wiki-text-secondary);border:1px solid var(--ui-border);background:var(--ui-faint);border-radius:999px;padding:1px 8px;line-height:1.6}
+.catalog-panel .extra-chips{margin:10px 0 0}
