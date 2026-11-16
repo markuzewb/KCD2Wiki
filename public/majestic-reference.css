@@ -150,7 +150,7 @@ a:hover{color:var(--wiki-accent-primary)}
 .article-notice span{color:var(--wiki-accent-primary)}.article-notice p{color:var(--wiki-text-primary)}
 .data-table{width:100%;background:var(--ui-surface);color:var(--wiki-text-primary);font-size:18px;border:1px solid var(--ui-border)}
 .data-table th{background:var(--wiki-bg-secondary);color:var(--wiki-text-secondary);border:1px solid var(--ui-border);font-size:16.5px}
-.data-table td{border:1px solid var(--ui-border);color:var(--wiki-text-primary)}.data-table tr:nth-child(even) td{background:var(--ui-faint)}
+.data-table td{border:1px solid var(--ui-border);color:var(--wiki-text-primary);background:var(--ui-surface)}.data-table tr:nth-child(even) td{background:var(--ui-faint)}
 .article-tags span{border:1px solid var(--ui-border);background:var(--wiki-bg-secondary);color:var(--wiki-text-secondary);border-radius:4px}
 .article-end{border-top:1px solid var(--ui-border);color:var(--wiki-text-secondary)}.article-end a{color:var(--wiki-accent-primary)}
 .article-aside{position:sticky;top:88px}.toc{background:var(--wiki-bg-secondary);border:1px solid var(--ui-border);border-radius:6px;box-shadow:none}
@@ -199,6 +199,9 @@ a:hover{color:var(--wiki-accent-primary)}
 .wiki-map-switch button.selected,.wiki-map-pin-list button.selected{background:var(--wiki-bg-secondary);border-color:var(--wiki-accent-primary);color:var(--wiki-accent-primary)}
 .wiki-map-main,.wiki-map-side,.wiki-map-toolbar,.wiki-map-editor,.wiki-map-disclaimer{background:var(--ui-surface);color:var(--wiki-text-primary);border:1px solid var(--ui-border);border-radius:5px;box-shadow:none}
 .wiki-map-side-head,.wiki-map-toolbar{border-color:var(--ui-border)}.wiki-map-side-head h2{font-family:var(--sans);font-weight:700}
+.wiki-map-side-head{background:var(--wiki-bg-secondary)}.wiki-map-side-head p{color:var(--wiki-text-secondary)}
+.wiki-map-caption{background:var(--wiki-bg-secondary);border-top:1px solid var(--ui-border)}
+.wiki-map-pin-list button{border-bottom:1px solid var(--ui-line)}
 .wiki-map-pin-list button:hover{background:var(--ui-hover)}
 .wiki-map-no-pins,.wiki-map-no-pins>p,.wiki-map-caption,.wiki-map-disclaimer{color:var(--wiki-text-secondary)}
 .wiki-map-toolbar>small,.wiki-map-toolbar>span{color:var(--wiki-text-secondary)}

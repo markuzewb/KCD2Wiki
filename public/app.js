@@ -239,7 +239,7 @@ class GameCatalogPage extends React.Component{
 }
 
 class App extends React.Component{
- constructor(props){super(props);this.state={data:null,gameMeta:null,admin:false,view:currentPath(),search:'',topSearch:'',updatesQuery:'',updatesSort:'new',type:'all',category:'all',menuOpen:false,mobile:false,editing:null,form:null,busy:false,error:'',notice:'',login:false};this.onPop=()=>this.setState({view:currentPath(),mobile:false,menuOpen:false,category:'all',type:'all',notice:''});}
+ constructor(props){super(props);this.state={data:null,gameMeta:null,admin:false,view:currentPath(),search:'',topSearch:'',updatesQuery:'',updatesSort:'new',type:'all',category:'all',tag:'all',menuOpen:false,mobile:false,editing:null,form:null,busy:false,error:'',notice:'',login:false};this.onPop=()=>this.setState({view:currentPath(),mobile:false,menuOpen:false,category:'all',type:'all',tag:'all',notice:''});}
  componentDidMount(){window.addEventListener('popstate',this.onPop);if(window.KCD2RP_STATIC)window.addEventListener('hashchange',this.onPop);this.load();wikiFetch('/api/game/meta').then(r=>r.json()).then(d=>this.setState({gameMeta:d.meta||null})).catch(()=>{});wikiFetch('/api/me').then(x=>x.json()).then(x=>this.setState({admin:!!x.admin})).catch(()=>{});}
  componentWillUnmount(){window.removeEventListener('popstate',this.onPop);window.removeEventListener('hashchange',this.onPop)}
  load(){wikiFetch('/api/content').then(r=>{if(!r.ok)throw Error('Сервер не отвечает');return r.json()}).then(data=>this.setState({data})).catch(e=>this.setState({error:e.message}))}
@@ -271,37 +271,61 @@ class App extends React.Component{
  }
  breadcrumb(){const {view,data}=this.state;if(view==='/')return 'Главная';if(view==='/catalog')return 'Все статьи';if(view.startsWith('/game/item/'))return 'Предмет';if(view.startsWith('/game/recipe/'))return 'Рецепт';if(view==='/game/items')return 'База предметов';if(view==='/game/recipes')return 'Рецепты KCD2';if(view==='/map'||view.startsWith('/map/'))return 'Карта Богемии';if(view==='/icons')return 'Иконки KCD2';if(view.startsWith('/animations'))return 'Анимации NPC';if(view==='/updates')return 'История изменений';if(view==='/admin')return 'Редактор';if(view.startsWith('/category/'))return data.categories.find(c=>c.id===decodeURIComponent(view.split('/')[2]))?.title||'Категория';if(view.startsWith('/article/'))return data.articles.find(a=>a.slug===decodeURIComponent(view.split('/')[2]))?.title||'Статья';return 'Энциклопедия';}
  home(){
- const {data,search}=this.state;
+ const {data,search,gameMeta}=this.state;
  const categories=data.categories||[];
- const chosen=[];
- const add=(tile)=>{if(!chosen.some(x=>x.to===tile.to))chosen.push(tile)};
- add({to:'/game/items',title:'Предметы',desc:'Оружие, материалы и другие игровые предметы',icon:'package'});
- add({to:'/game/recipes',title:'Рецепты',desc:'Чертежи и изготовление предметов',icon:'hammer'});
- for(const c of categories){if(c.id==='updates'||c.id==='items')continue;add({to:'/category/'+c.id,title:c.title,desc:c.description,icon:sectionIcon(c.id,c.title)});}
- add({to:'/animations',title:'Анимации NPC',desc:'Каталог игровых анимаций и клипов',icon:'compass'});
- add({to:'/icons',title:'Иконки KCD2',desc:'Библиотека изображений и интерфейсных элементов',icon:'image'});
- add({to:'/catalog',title:'Все статьи',desc:'Полный каталог энциклопедии Богемии',icon:'book'});
- const sections=[{to:'/map',title:'Карта',desc:'Троски, Кутна-Гора и исследование Богемии',icon:'map'},
- {to:'/updates',title:'История изменений',desc:'Обновления и изменения проекта',icon:'clock'},...chosen];
+ const subTagsOf=id=>{const cat=categories.find(x=>x.id===id);const m=new Map();for(const a of data.articles){if(a.category!==id)continue;for(const t of a.tags||[]){if(cat&&t.toLocaleLowerCase('ru')===cat.title.toLocaleLowerCase('ru'))continue;m.set(t,(m.get(t)||0)+1);}}return [...m.entries()].sort((x,y)=>y[1]-x[1]||x[0].localeCompare(y[0],'ru')).map(e=>e[0]);};
+ const enc=categories.filter(c=>c.id!=='updates').map(c=>({to:'/category/'+c.id,title:c.title,desc:c.description,icon:sectionIcon(c.id,c.title),count:countFor(data,c.id),tags:subTagsOf(c.id).slice(0,3)}));
+ const db=[
+  {to:'/game/items',title:'Предметы KCD2',desc:'Оружие, броня, материалы и другие игровые предметы',icon:'package',count:gameMeta?.itemCount},
+  {to:'/game/recipes',title:'Рецепты KCD2',desc:'Чертежи и изготовление предметов по ремёслам',icon:'hammer',count:gameMeta?.recipeCount},
+  {to:'/animations',title:'Анимации NPC',desc:'Каталог игровых анимаций и клипов',icon:'compass'},
+  {to:'/icons',title:'Иконки KCD2',desc:'Библиотека изображений и интерфейсных элементов',icon:'image'},
+  {to:'/map',title:'Карта Богемии',desc:'Троски, Кутна-Гора и исследование мира',icon:'map'}];
+ const proj=[
+  {to:'/catalog',title:'Все статьи',desc:'Полный каталог энциклопедии Богемии',icon:'book',count:data.articles.length},
+  {to:'/updates',title:'История изменений',desc:'Обновления и изменения проекта',icon:'clock',count:countFor(data,'updates')}];
+ const tile=c=>h(Link,{to:c.to,key:c.to,className:'ref-category'},
+  h('span',{className:'ref-category-head'},h(Icon,{name:c.icon}),h('strong',{},c.title),c.count!=null&&h('span',{className:'ref-category-count'},fmtCount(c.count)),h(Icon,{name:'link'})),
+  h('span',{className:'ref-category-description'},c.desc),
+  c.tags&&c.tags.length?h('span',{className:'ref-category-tags'},c.tags.map(t=>h('i',{key:t},t))):null);
+ const group=(title,desc,tiles)=>[h('div',{className:'ref-section-heading ref-home-group',key:'g-'+title},h('h2',{},title),h('p',{},desc)),h('div',{className:'ref-categories-grid',key:'gr-'+title},tiles.map(tile))];
  // Города Богемии: клик открывает атлас с приближением к поселению, как в игре.
  const regions=[['Кутна-Гора','Кутногорский регион','kuttenberg'],['Тросковице','Тросецко','trosky'],['Замок Троски','Тросецко','trosky'],['Сухдол','Кутногорский регион','kuttenberg'],['Тахов','Тросецко','trosky'],['Седлецкий монастырь','Кутногорский регион','kuttenberg'],['Желеев','Тросецко','trosky'],['Малешов','Кутногорский регион','kuttenberg'],['Семин','Тросецко','trosky'],['Мышковицы','Кутногорский регион','kuttenberg'],['Небаковская крепость','Тросецко','trosky'],['Биланы','Кутногорский регион','kuttenberg']];
  return h('div',{className:'page home-page reference-home'},
  h('section',{className:'ref-hero'},h('img',{className:'ref-hero-illustration left',src:wikiUrl('/illustrations/pilgrim.svg'),alt:'',loading:'eager'}),
- h('div',{className:'ref-hero-center'},h('h1',{},'Общие категории'),h('p',{},'Здесь вы можете найти любую информацию о проекте KCD2RP, его игровом мире и сервере.'),
+ h('div',{className:'ref-hero-center'},h('h1',{},'Энциклопедия Богемии'),h('p',{},'Здесь вы можете найти любую информацию о проекте KCD2RP, его игровом мире и сервере.'),
  h('form',{className:'ref-hero-search',onSubmit:e=>{e.preventDefault();this.openSearch(search)}},h(Icon,{name:'search'}),h('input',{value:search,onChange:e=>this.set({search:e.target.value}),placeholder:'Поиск информации на сайте...', 'aria-label':'Поиск по энциклопедии'}),h('button',{type:'submit',title:'Найти'},h(Icon,{name:'arrow'}))),
  h('div',{className:'ref-hero-prompts'},h(Link,{to:'/game/items'},'Предметы'),h(Link,{to:'/game/recipes'},'Рецепты'),h(Link,{to:'/animations'},'Анимации NPC'),h(Link,{to:'/map'},'Карта Богемии'))),
  h('img',{className:'ref-hero-illustration right',src:wikiUrl('/illustrations/wiki-pages.svg'),alt:'',loading:'eager'})),
  h('section',{className:'ref-region-marquee','aria-label':'Города Богемии'},h('div',{className:'ref-region-track'},[...regions,...regions].map(([name,desc,region],i)=>h(Link,{to:'/map/'+region+'/'+encodeURIComponent(name),key:i,className:'ref-region',title:'Открыть на карте: '+name},h(Icon,{name:'map'}),h('span',{},h('strong',{},name),h('small',{},desc)),h('i',{}))))),
- h('section',{className:'ref-home-categories'},h('div',{className:'ref-categories-grid'},
- h('a',{className:'ref-category wide',href:'kcdmp://connect/play.kcd2rp.ru:7777'},h('span',{className:'ref-category-head'},h(Icon,{name:'server'}),h('strong',{},'Сервер KCD2RP'),h(Icon,{name:'link'})),h('span',{className:'ref-category-description'},'Подключение к игровому миру Богемии')),
- sections.map(c=>h(Link,{to:c.to,key:c.to,className:'ref-category'},h('span',{className:'ref-category-head'},h(Icon,{name:c.icon}),h('strong',{},c.title),h(Icon,{name:'link'})),h('span',{className:'ref-category-description'},c.desc))))));
+ h('section',{className:'ref-home-categories'},
+ h('div',{className:'ref-categories-grid'},
+  h('a',{className:'ref-category wide',href:'kcdmp://connect/play.kcd2rp.ru:7777'},h('span',{className:'ref-category-head'},h(Icon,{name:'server'}),h('strong',{},'Сервер KCD2RP'),h(Icon,{name:'link'})),h('span',{className:'ref-category-description'},'Подключение к игровому миру Богемии'))),
+ group('Энциклопедия','Статьи по категориям — внутри каждой свои подкатегории',enc),
+ group('Игровая база данных','Каталоги предметов, рецептов, анимаций и иконок KCD2',db),
+ group('Проект','Новости сервера и полный список материалов',proj)));
  }
- catalog(fixedCategory){const {data,search,category,type}=this.state;const current=fixedCategory||category;let c=fixedCategory?data.categories.find(x=>x.id===fixedCategory):null;
- let articles=data.articles.filter(a=>(current==='all'||a.category===current)&&(type==='all'||a.type===type));
+ catalog(fixedCategory){const {data,search,category,type,tag}=this.state;const current=fixedCategory||category;let c=fixedCategory?data.categories.find(x=>x.id===fixedCategory):null;
+ const catTitle=(data.categories.find(x=>x.id===current)?.title||'').toLocaleLowerCase('ru');
+ const base=data.articles.filter(a=>current==='all'||a.category===current);
+ const tagMap=new Map();if(current!=='all')for(const a of base)for(const t of a.tags||[]){if(t.toLocaleLowerCase('ru')===catTitle)continue;tagMap.set(t,(tagMap.get(t)||0)+1);}
+ const tags=[...tagMap.entries()].sort((x,y)=>y[1]-x[1]||x[0].localeCompare(y[0],'ru'));
+ const activeTag=tag&&tag!=='all'&&tagMap.has(tag)?tag:'all';
+ let articles=base.filter(a=>(type==='all'||a.type===type)&&(activeTag==='all'||(a.tags||[]).includes(activeTag)));
  const q=search.trim().toLocaleLowerCase('ru');if(q)articles=articles.filter(a=>(a.title+' '+a.description+' '+a.tags.join(' ')+' '+a.blocks.map(b=>b.value||'').join(' ')).toLocaleLowerCase('ru').includes(q));
+ const chip=(active,onClick,label,key)=>h('button',{key,type:'button',className:'extra-chip'+(active?' active':''),onClick},label);
+ const chips=h('div',{className:'extra-chips'},
+  !fixedCategory&&h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Категория'),
+   chip(category==='all',()=>this.set({category:'all',tag:'all'}),'Все · '+fmtCount(data.articles.length),'all-cat'),
+   data.categories.map(cc=>chip(category===cc.id,()=>this.set({category:category===cc.id?'all':cc.id,tag:'all'}),cc.title+' · '+fmtCount(countFor(data,cc.id)),cc.id))),
+  h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
+   current==='all'?h('span',{className:'extra-chip-hint'},'Выберите категорию выше — здесь появятся её подкатегории'):
+   tags.length?[chip(activeTag==='all',()=>this.set({tag:'all'}),'Все · '+fmtCount(base.length),'all-tags'),...tags.map(([t,n])=>chip(activeTag===t,()=>this.set({tag:activeTag===t?'all':t}),t+' · '+fmtCount(n),t))]:
+   h('span',{className:'extra-chip-hint'},'В этом разделе пока нет подкатегорий')));
  return h('div',{className:'page catalog-page'},h('div',{className:'page-overline'},fixedCategory?'РАЗДЕЛ ЭНЦИКЛОПЕДИИ':'БИБЛИОТЕКА БОГЕМИИ'),h('div',{className:'catalog-heading'},h('div',{},h('h1',{},c?c.title:'Каталог знаний'),h('p',{},c?c.description:'Справочники, путеводители и статьи обо всех аспектах жизни в KCD2RP.')),this.state.admin&&h('button',{className:'outline-btn',onClick:()=>this.startEdit()},'+ Новая статья')),
  h('div',{className:'catalog-panel'},h(SearchInput,{value:search,onChange:v=>this.set({search:v}),placeholder:'Поиск по названию, содержимому и тегам…'}),
- h('div',{className:'filters'},!fixedCategory&&h('select',{value:category,onChange:e=>this.set({category:e.target.value})},[h('option',{key:'all',value:'all'},'Все категории')].concat(data.categories.map(c=>h('option',{key:c.id,value:c.id},c.title)))),h('select',{value:type,onChange:e=>this.set({type:e.target.value})},['all','article','catalog','guide','changelog'].map((v,i)=>h('option',{key:v,value:v},['Все форматы','Статьи','Каталоги','Руководства','Обновления'][i])))),
+ chips,
+ h('div',{className:'filters'},h('select',{value:type,onChange:e=>this.set({type:e.target.value})},['all','article','catalog','guide','changelog'].map((v,i)=>h('option',{key:v,value:v},['Все форматы','Статьи','Каталоги','Руководства','Обновления'][i])))),
  h('div',{className:'catalog-meta'},h('span',{},'Найдено материалов: ',h('b',{},articles.length)),h('span',{},'Сортировка: по названию'))),
  articles.length?h('div',{className:'catalog-results'},articles.map(a=>h(ArticleCard,{key:a.id,a,categories:data.categories,compact:true}))):h('div',{className:'empty'},'⌕',h('h3',{},'Ничего не найдено'),h('p',{},'Попробуйте изменить поисковый запрос или фильтры.')));
  }
