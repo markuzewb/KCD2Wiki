@@ -90,6 +90,7 @@ class GameCatalogPage extends React.Component{
    if(mode==='items'&&st.cat&&st.sub)q.set('sub',st.sub);
    if(mode==='items'&&st.sort)q.set('sort',st.sort);
    if(mode==='recipes')for(const k of ['kind','craft','level','sort'])if(st[k])q.set(k,st[k]);
+   if(mode==='recipes'&&st.craft&&st.sub)q.set('sub',st.sub);
    url='/api/game/'+mode+'?'+q.toString();}
   this.setState({loading:true,error:''});
   try{const res=await wikiFetch(url);const body=await res.json();if(!res.ok)throw Error(body.error||'Не удалось открыть каталог');if(this._seq!==seq)return;
@@ -121,16 +122,24 @@ class GameCatalogPage extends React.Component{
       [['','Название А–Я'],['name-desc','Название Я–А'],['price-desc','Цена: дорогие'],['price-asc','Цена: дешёвые'],['weight-desc','Вес: тяжёлые'],['weight-asc','Вес: лёгкие']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
     (st.cat||st.sub||st.role!=='all'||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',cat:'',sub:'',role:'all',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
   const crafts=st.meta?.recipeCrafts||Object.entries(st.meta?.craftNames||{}).map(([k,v])=>[k,v,0,'🛠️']);
+  const recipeSubs=!isItem&&st.craft?(st.meta?.recipeSubcats?.[st.craft]||[]):[];
+  const craftRow=crafts.find(c=>c[0]===st.craft);
   const recipeChips=!isItem&&h('div',{className:'extra-chips ref-item-chips'},
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Ремесло'),
-      crafts.map(c=>chip(st.craft===c[0],()=>this.filter('craft',st.craft===c[0]?'':c[0]),(c[3]?c[3]+' ':'')+c[1]+(c[2]?' · '+fmtCount(c[2]):''),c[0]))),
+      crafts.map(c=>chip(st.craft===c[0],()=>this.setState({craft:st.craft===c[0]?'':c[0],sub:'',page:1},()=>this.load()),(c[3]?c[3]+' ':'')+c[1]+(c[2]?' · '+fmtCount(c[2]):''),c[0]))),
+    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
+      recipeSubs.length?[
+        chip(!st.sub,()=>this.filter('sub',''),'Все'+(craftRow&&craftRow[2]?' · '+fmtCount(craftRow[2]):''),'all-subs'),
+        ...recipeSubs.map(s=>chip(st.sub===s[0],()=>this.filter('sub',st.sub===s[0]?'':s[0]),s[0]+' · '+fmtCount(s[1]),s[0]))
+      ]:h('span',{className:'extra-chip-hint',key:'hint'},'Выберите ремесло выше — здесь появятся подкатегории его изделий'),
+    ),
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Уровень'),
       Array.from({length:10},(_,i)=>String(i+1)).map(v=>chip(st.level===v,()=>this.filter('level',st.level===v?'':v),v,'lvl'+v))),
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Тип'),
       Object.entries(kindLabels).map(([k,v])=>chip(st.kind===k,()=>this.filter('kind',st.kind===k?'':k),v,k))),
     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
       [['','Название А–Я'],['name-desc','Название Я–А'],['level-asc','Уровень: низкие'],['level-desc','Уровень: высокие'],['ingr-asc','Ингредиенты: меньше'],['ingr-desc','Ингредиенты: больше']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
-    (st.craft||st.level||st.kind||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',craft:'',level:'',kind:'',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
+    (st.craft||st.sub||st.level||st.kind||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',craft:'',sub:'',level:'',kind:'',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
   const filters=h('div',{className:'ref-catalog-filters'},h(SearchInput,{value:st.q,onChange:v=>this.filter('q',v),placeholder:isItem?'Поиск предметов...':'Поиск рецептов...'}));
   const cardGrid=st.rows.length?h('div',{className:'game-results ref-card-gallery'},st.rows.map(r=>isItem?this.itemRow(r):this.recipeRow(r))):h('div',{className:'game-placeholder'},'Ничего не найдено. Измените условия поиска.');
   const results=st.error?this.failed():st.loading&&!st.rows.length?this.loading():h('div',{className:'ref-catalog-results'},cardGrid,h(WikiCatalogPager,{page:st.page,total:st.total,pages:st.pages,onChange:n=>this.page(n)}));

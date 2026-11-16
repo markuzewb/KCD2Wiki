@@ -74,7 +74,23 @@
     };
   }
   function gameData() {
-    return Promise.all([load('game'), load('item-icon-map')]).then(([game, matches]) => ({ game, matches }));
+    return Promise.all([load('game'), load('item-icon-map')]).then(([game, matches]) => {
+      if (!game._itemById) {
+        game._itemById = new Map(game.items.map(item => [item.id.toLowerCase(), item]));
+        const subs = {};
+        for (const recipe of game.recipes) {
+          const out = recipe.output?.id && game._itemById.get(recipe.output.id.toLowerCase());
+          const sub = (out && out.subName) || 'Прочее';
+          (subs[recipe.craft] = subs[recipe.craft] || {})[sub] = (subs[recipe.craft][sub] || 0) + 1;
+        }
+        game.meta = { ...game.meta, recipeSubcats: Object.fromEntries(Object.entries(subs).map(([craft, m]) => [craft, Object.entries(m).sort((a, b) => b[1] - a[1])])) };
+      }
+      return { game, matches };
+    });
+  }
+  function recipeSub(recipe, game) {
+    const out = recipe.output?.id && game._itemById.get(recipe.output.id.toLowerCase());
+    return (out && out.subName) || 'Прочее';
   }
 
   async function route(url) {
@@ -163,10 +179,12 @@
       const craft = query.get('craft') || '';
       const kind = query.get('kind') || '';
       const level = query.get('level') || '';
+      const sub = query.get('sub') || '';
       const sort = query.get('sort') || '';
       const rows = game.recipes.filter(recipe =>
         (!search || text([recipe.id, recipe.name, recipe.craft, recipe.craftName, ...recipe.ingredients.map(item => item.name), ...recipe.outputs.map(item => item.name)].join(' ')).includes(search)) &&
-        (!craft || recipe.craft === craft) && (!kind || recipe.kind === kind) && (!level || String(recipe.level) === level)
+        (!craft || recipe.craft === craft) && (!kind || recipe.kind === kind) && (!level || String(recipe.level) === level) &&
+        (!sub || recipeSub(recipe, game) === sub)
       );
       sortRecipes(rows, sort);
       const seen = new Map(); const grouped = [];
