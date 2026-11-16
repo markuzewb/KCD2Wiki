@@ -200,3 +200,4 @@ body{font-size:15.5px;line-height:1.5}
 .game-ingredient .game-field-copy{margin-left:auto}
 .game-ingredient small{flex:none}
 .game-recipe-output-info strong{display:inline-flex;align-items:center;gap:8px}
+.extra-chip-hint{font-size:12.5px;color:var(--wiki-text-secondary);padding:3px 0}
