@@ -309,6 +309,9 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 
 /* ==== Hero-персонажи с kcd2rp.ru + слитные вкладки ==== */
 /* Персонажи в полный рост: прозрачный фон, ровно от верха до низа окна при любом масштабе, затухание снизу */
+.ref-home-bg{position:fixed;inset:0;z-index:0;pointer-events:none;background:url("media/backdrops/bohemia-dark.webp") center/cover no-repeat;opacity:.38;
+ -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 55%,rgba(0,0,0,.35) 100%);mask-image:linear-gradient(to bottom,#000 0,#000 55%,rgba(0,0,0,.35) 100%)}
+html:not([data-theme="dark"]) .ref-home-bg{background-image:url("media/backdrops/bohemia-light.webp");opacity:.55}
 .ref-hero-art{position:fixed;top:56px;height:calc(100vh - 56px);height:calc(100dvh - 56px);width:auto;max-width:40vw;pointer-events:none;z-index:0;
  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 76%,transparent 99%);mask-image:linear-gradient(to bottom,#000 0,#000 76%,transparent 99%)}
 .ref-hero-art.left{left:0;aspect-ratio:458/1264}

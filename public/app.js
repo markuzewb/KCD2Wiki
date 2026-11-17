@@ -368,6 +368,7 @@ class App extends React.Component{
  const group=(title,desc,tiles)=>[h('div',{className:'ref-section-heading ref-home-group',key:'g-'+title},h('h2',{},title),h('p',{},desc)),h('div',{className:'ref-categories-grid',key:'gr-'+title},tiles.map(tile))];
  // Города Богемии: клик открывает атлас с приближением к поселению, как в игре.
  return h('div',{className:'page home-page reference-home'},
+ h('div',{className:'ref-home-bg','aria-hidden':'true'}),
  h('section',{className:'ref-hero'},h('div',{className:'ref-hero-art left'},h('img',{className:'ref-hero-illustration',src:wikiUrl('/media/heroes/hero-outlaw-v3.webp'),alt:'',loading:'eager',onError:e=>{e.target.style.display='none'}})),
  h('div',{className:'ref-hero-center'},h('h1',{},'Энциклопедия Богемии'),h('p',{},'Здесь вы можете найти любую информацию о проекте KCD2RP, его игровом мире и сервере.'),
  h('form',{className:'ref-hero-search',onSubmit:e=>{e.preventDefault();this.openSearch(search)}},h(Icon,{name:'search'}),h('input',{value:search,onChange:e=>this.set({search:e.target.value}),placeholder:'Поиск информации на сайте...', 'aria-label':'Поиск по энциклопедии'}),h('button',{type:'submit',title:'Найти'},h(Icon,{name:'arrow'}))),
