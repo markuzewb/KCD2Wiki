@@ -89,7 +89,7 @@ async function handle(req,res,u,ctx){
   if(itemDetail){
     const item=d._itemById.get(itemDetail[1].toLowerCase());if(!item)return answer(res,404,{error:'Предмет не найден'}),true;
     const related=d.recipes.filter(r=>r.outputs.some(g=>g.id===item.id)||r.ingredients.some(g=>g.id===item.id)).slice(0,40).map(recipeSummary);
-    const twins=d.items.filter(row=>row.name===item.name&&row.category===item.category);
+    const twins=d.items.filter(row=>row.name===item.name&&row.category===item.category&&(row.subName||'')===(item.subName||''));
     const variants=twins.length>1?twins.map(v=>{
       const recipe=d.recipes.find(r=>r.outputs.some(o=>o.id===v.id));
       return {id:v.id,name:v.name,internal:v.internal,gamePrice:v.gamePrice,referencePrice:v.referencePrice,
@@ -131,7 +131,7 @@ async function handle(req,res,u,ctx){
     if(cmp)indices.sort(cmp);
     const seen=new Map();const grouped=[];
     for(const item of indices){
-      const key=item.name+'\u0000'+item.category;
+      const key=item.name+'\u0000'+item.category+'\u0000'+(item.subName||'');
       const p=price(item);
       const g=seen.get(key);
       if(!g){const entry={item,count:1,min:p,max:p};seen.set(key,entry);grouped.push(entry);}

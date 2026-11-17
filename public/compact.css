@@ -338,3 +338,6 @@ html:not([data-theme="dark"]) .ref-hero-art.right .ref-hero-illustration{content
 .game-modal .game-back{display:none}
 .game-modal .game-title h1{font-size:33px}
 @media (max-width:690px){.game-modal-backdrop{padding:10px 6px}.game-modal .page{padding:14px 12px 20px}.game-modal-close{top:7px;right:7px;width:36px;height:36px}}
+
+.game-variants-more{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 14px;border:1px dashed var(--ref-border);border-radius:10px;background:var(--ref-soft);color:var(--ref-text);font-size:15px;font-weight:600;cursor:pointer}
+.game-variants-more:hover{border-color:var(--ref-pink);color:var(--ref-pink)}

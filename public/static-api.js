@@ -165,7 +165,7 @@
       sortItems(rows, sort);
       const seen = new Map(); const grouped = [];
       for (const item of rows) {
-        const key = item.name + '\u0000' + item.category;
+        const key = item.name + '\u0000' + item.category + '\u0000' + (item.subName || '');
         const price = item.gamePrice ?? item.referencePrice;
         const g = seen.get(key);
         if (!g) { const entry = { item, count: 1, min: price, max: price }; seen.set(key, entry); grouped.push(entry); }
@@ -206,7 +206,7 @@
       if (!found) return json({ error: 'Предмет не найден' }, 404);
       const related = game.recipes.filter(recipe => recipe.outputs.some(row => row.id === found.id) || recipe.ingredients.some(row => row.id === found.id)).slice(0, 40);
       const stats = await load('item-stats').then(data => data.items[found.id.toLowerCase()] || []).catch(() => []);
-      const twins = game.items.filter(row => row.name === found.name && row.category === found.category);
+      const twins = game.items.filter(row => row.name === found.name && row.category === found.category && (row.subName || '') === (found.subName || ''));
       const variants = twins.length > 1 ? twins.map(v => {
         const recipe = game.recipes.find(r => r.outputs.some(o => o.id === v.id));
         return { id: v.id, name: v.name, internal: v.internal, gamePrice: v.gamePrice, referencePrice: v.referencePrice,
