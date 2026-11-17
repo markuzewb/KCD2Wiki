@@ -309,10 +309,10 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 
 /* ==== Hero-персонажи с kcd2rp.ru + слитные вкладки ==== */
 /* Персонажи в полный рост: прозрачный фон, ровно от верха до низа окна при любом масштабе, затухание снизу */
-.ref-hero-art{position:fixed;top:0;height:100vh;height:100dvh;width:auto;max-width:40vw;pointer-events:none;z-index:0;
+.ref-hero-art{position:fixed;top:56px;height:calc(100vh - 56px);height:calc(100dvh - 56px);width:auto;max-width:40vw;pointer-events:none;z-index:0;
  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 76%,transparent 99%);mask-image:linear-gradient(to bottom,#000 0,#000 76%,transparent 99%)}
-.ref-hero-art.left{left:0;aspect-ratio:535/1342}
-.ref-hero-art.right{right:0;aspect-ratio:525/1312}
+.ref-hero-art.left{left:0;aspect-ratio:458/1264}
+.ref-hero-art.right{right:0;aspect-ratio:601/1500}
 .ref-hero-art .ref-hero-illustration{position:static;display:block;width:100%;height:100%;max-height:none;object-fit:contain;opacity:1;-webkit-mask-image:none;mask-image:none}
 .ref-hero-art.left .ref-hero-illustration{object-position:left bottom}
 .ref-hero-art.right .ref-hero-illustration{object-position:right bottom}
@@ -321,8 +321,6 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 .ref-section-heading h2,.ref-section-heading p,.ref-app-shell .footer span,.ref-app-shell .footer a{text-shadow:0 0 2px var(--ref-bg),0 0 4px var(--ref-bg),0 0 8px var(--ref-bg),0 0 14px var(--ref-bg),0 0 24px var(--ref-bg)}
 @media (max-width:1100px){.ref-hero-art{max-width:32vw}}
 @media (max-width:690px){.ref-hero-art{max-width:34vw;opacity:.55}}
-.ref-hero-art.left .ref-hero-illustration{-webkit-mask-image:linear-gradient(to right,#000 0,#000 55%,transparent 92%);mask-image:linear-gradient(to right,#000 0,#000 55%,transparent 92%)}
-.ref-hero-art.right .ref-hero-illustration{-webkit-mask-image:linear-gradient(to left,#000 0,#000 55%,transparent 92%);mask-image:linear-gradient(to left,#000 0,#000 55%,transparent 92%)}
 .ref-server-strip,.ref-home-categories,.ref-home-featured{position:relative;z-index:1}
 @media (max-width:1100px){.ref-hero-art{width:38vw;height:540px}}
 @media (max-width:690px){.ref-hero-art{width:34vw;height:400px;opacity:.6}}
