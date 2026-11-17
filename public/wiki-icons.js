@@ -41,12 +41,14 @@ class IconGallery extends React.Component{
        h('div',{className:'search-field'},
          h('input',{value:s.q,onChange:e=>this.change('q',e.target.value),placeholder:'Поиск по внутреннему названию: sword, potion, horse…',spellCheck:false,'aria-label':'Поиск иконок'}),
          s.q?h('button',{type:'button',onClick:()=>this.change('q',''),'aria-label':'Очистить поиск'},'×'):null))),
-   h('div',{className:'extra-chips ref-item-chips'},
-     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Раздел'),
-       chip(!s.category,()=>this.change('category',''),'Все · '+counts(meta?.total),'all'),
-       Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([id,count])=>chip(s.category===id,()=>this.change('category',s.category===id?'':id),(headings[id]||id)+' · '+counts(count),id))),
-     (s.category||s.q)?h('button',{type:'button',className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',category:'',page:1,selected:null},()=>this.search())},'✕ Сбросить всё'):null),
-   h('div',{className:'ref-catalog-count'},'Найдено: ',counts(s.total),' · Иконки'),
+   h(window.WikiFilterPanel,{
+    search:{value:s.q,onChange:v=>this.change('q',v),hidden:true},
+    groups:[
+     {key:'category',title:'Раздел',value:s.category,onSelect:v=>this.change('category',v),
+      options:Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([id,count])=>({value:id,label:headings[id]||id,count}))}
+    ],
+    onReset:()=>this.setState({q:'',category:'',page:1,selected:null},()=>this.search()),
+    total:s.total,unit:'Иконки'},
    s.error&&h('p',{className:'extra-alert'},s.error),
    s.loading&&!s.rows.length?h('div',{className:'icon-empty'},'Загрузка иконок…'):
     s.rows.length?h('div',{className:'icon-gallery-grid'},s.rows.map(icon=>h('button',{type:'button',key:icon.path,className:'icon-gallery-card',onClick:()=>this.setState({selected:icon})},
@@ -66,7 +68,7 @@ class IconGallery extends React.Component{
       h('small',{},(headings[chosen.category]||chosen.category)+' · '+chosen.width+'×'+chosen.height),
       h('h2',{},chosen.id),h('code',{},chosen.path),
       h('div',{className:'icon-preview-actions'},h('button',{onClick:()=>this.copy(chosen.id)},'Копировать ID'),h('button',{onClick:()=>this.copy(chosen.path)},'Копировать путь')),
-      s.copy&&h('p',{className:'icon-copy-ok'},s.copy))));
+      s.copy&&h('p',{className:'icon-copy-ok'},s.copy)))));
  }
 }
 window.WikiIconsPage=IconGallery;
