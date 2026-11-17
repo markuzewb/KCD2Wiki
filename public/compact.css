@@ -317,6 +317,9 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 .ref-hero-art.right{right:calc((100% - 100vw)/2)}
 .ref-hero-art .ref-hero-illustration{position:static;display:block;width:100%;height:100%;max-height:none;object-fit:cover;object-position:50% 16%;opacity:1}
 .ref-hero-art.left .ref-hero-illustration{object-position:50% 52%}
+/* Светлая тема: те же персонажи, но нарисованные на белом фоне */
+html:not([data-theme="dark"]) .ref-hero-art.left .ref-hero-illustration{content:url("media/heroes/hero-outlaw-light.webp")}
+html:not([data-theme="dark"]) .ref-hero-art.right .ref-hero-illustration{content:url("media/heroes/hero-knight-light.webp")}
 .ref-hero-art.left .ref-hero-illustration{-webkit-mask-image:linear-gradient(to right,#000 0,#000 55%,transparent 92%);mask-image:linear-gradient(to right,#000 0,#000 55%,transparent 92%)}
 .ref-hero-art.right .ref-hero-illustration{-webkit-mask-image:linear-gradient(to left,#000 0,#000 55%,transparent 92%);mask-image:linear-gradient(to left,#000 0,#000 55%,transparent 92%)}
 .ref-server-strip,.ref-home-categories,.ref-home-featured{position:relative;z-index:1}
