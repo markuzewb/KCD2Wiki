@@ -97,6 +97,7 @@
     const path = url.pathname;
     const query = url.searchParams;
     if (path === '/api/content') return json(await load('content'));
+    if (path === '/api/development') return json(await load('development'));
     if (path === '/api/me') return json({ admin: false, readOnly: true });
 
     if (path === '/api/icons/meta') {

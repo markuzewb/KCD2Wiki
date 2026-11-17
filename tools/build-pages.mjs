@@ -18,6 +18,7 @@ const animations = readJson(path.join(root, 'catalog', 'animations.json'));
 const icons = readJson(path.join(root, 'catalog', 'icons.json'));
 const matches = readJson(path.join(root, 'catalog', 'item-icon-map.json'));
 const maps = readJson(existing(path.join(dataDir, 'map-markers.json'), path.join(root, 'catalog', 'map-markers.json')));
+const development = readJson(path.join(root, 'catalog', 'development.json'));
 if (!content.site || !Array.isArray(content.categories) || !Array.isArray(content.articles)) throw new Error('Invalid Wiki content');
 if (!game.meta || !Array.isArray(game.items) || !Array.isArray(game.recipes)) throw new Error('Invalid game catalog');
 if (game.meta.itemCount !== game.items.length || game.meta.recipeCount !== game.recipes.length) throw new Error('Game catalog counts do not match meta');
@@ -84,6 +85,7 @@ const regionInfo = {
   kuttenberg: { title: 'Кутна-Гора', rows: 5, cols: 6, tileSize: 1024, source: 'Карты игрового режима KCD2RP', labels: mapLabels.labels.kuttenberg }
 };
 writeJson('maps', { regions: regionInfo, markers: maps.markers, calibrated: false, notice: 'Игровые X/Y не привязаны к пикселям; метки размещаются вручную редактором.' });
+writeJson('development', development);
 
 // Cache busting: a content hash of the frontend bundle versions every asset URL,
 // so browsers pick up new scripts/styles right after each deployment.

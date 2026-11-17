@@ -74,6 +74,55 @@ function WikiCatalogPager({page,total,pages,onChange}){
    h('span',{},'Страница ',h('strong',{},page),' из ',fmtCount(pages),' · ',fmtCount(total),' записей'),
    h('button',{type:'button',disabled:page>=pages,onClick:()=>onChange(Math.min(pages,page+1))},'Далее →'));
 }
+class DevelopmentPage extends React.Component{
+ constructor(p){super(p);this.state={data:null,tab:'mech',cat:'all',status:'all',q:'',open:{},error:''};}
+ componentDidMount(){wikiFetch('/api/development').then(r=>r.json()).then(d=>this.setState({data:d})).catch(()=>this.setState({error:'Не удалось загрузить карту развития'}));}
+ render(){
+  const {data,tab,cat,status,q,open,error}=this.state;
+  if(error)return h('div',{className:'page'},h('div',{className:'empty'},'⚠',h('h3',{},error)));
+  if(!data)return h('div',{className:'page'},h('div',{className:'loading'},'Загружаем карту развития…'));
+  const statuses=[['all','Все'],['done','Работает'],['wip','Дорабатывается'],['plan','Анонсировано']];
+  const chip=(active,onClick,label,key)=>h('button',{key,type:'button',className:'extra-chip'+(active?' active':''),onClick},label);
+  const needle=q.trim().toLocaleLowerCase('ru');
+  const matches=m=>(!needle||(m.title+' '+m.desc+' '+(m.details||[]).join(' ')).toLocaleLowerCase('ru').includes(needle))&&(status==='all'||m.status===status);
+  const cats=data.categories.filter(c=>cat==='all'||c.id===cat).map(c=>Object.assign({},c,{mechanics:c.mechanics.filter(matches)})).filter(c=>c.mechanics.length);
+  const total=data.categories.reduce((n,c)=>n+c.mechanics.length,0);
+  const counts={done:0,wip:0,plan:0};for(const c of data.categories)for(const m of c.mechanics)counts[m.status]=(counts[m.status]||0)+1;
+  const statusBadge=s=>h('span',{className:'dev-status dev-status-'+s},(data.statuses&&data.statuses[s])||s);
+  return h('div',{className:'page dev-page'},
+   h('div',{className:'page-overline'},'ПРОЕКТ KCD2RP'),
+   h('div',{className:'catalog-heading'},h('div',{},h('h1',{},'Карта развития'),h('p',{},'Механики сервера и хронология обновлений по материалам новостного канала · '+data.period))),
+   h('div',{className:'ref-tabs dev-tabs'},
+    h('button',{type:'button',className:'ref-tab'+(tab==='mech'?' active':''),onClick:()=>this.setState({tab:'mech'})},'Карта механик · '+fmtCount(total)),
+    h('button',{type:'button',className:'ref-tab'+(tab==='time'?' active':''),onClick:()=>this.setState({tab:'time'})},'Хронология · '+fmtCount(data.timeline.length))),
+   tab==='mech'?[
+    h('div',{className:'extra-chips',key:'filters'},
+     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Раздел'),
+      chip(cat==='all',()=>this.setState({cat:'all'}),'Все · '+fmtCount(total),'all'),
+      data.categories.map(c=>chip(cat===c.id,()=>this.setState({cat:cat===c.id?'all':c.id}),c.title+' · '+c.mechanics.length,c.id))),
+     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Статус'),
+      statuses.map(([id,label])=>chip(status===id,()=>this.setState({status:id}),id==='all'?label:label+' · '+(counts[id]||0),id))),
+     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Поиск'),
+      h('input',{className:'dev-search-input',value:q,onChange:e=>this.setState({q:e.target.value}),placeholder:'Название или описание механики…','aria-label':'Поиск механики'}))),
+    cats.length?cats.map(c=>h('section',{key:c.id,className:'dev-cat'},
+      h('div',{className:'dev-cat-head'},h(Icon,{name:c.icon}),h('h2',{},c.title),h('span',{className:'dev-cat-desc'},c.desc)),
+      h('div',{className:'dev-grid'},c.mechanics.map(m=>{
+       const id=c.id+'/'+m.id;const isOpen=!!open[id];
+       return h('article',{key:m.id,className:'dev-card'},
+        h('div',{className:'dev-card-head'},h('h3',{},m.title),statusBadge(m.status)),
+        h('p',{className:'dev-desc'},m.desc),
+        h('ul',{className:'dev-details'},(m.details||[]).map((d,i)=>h('li',{key:i},d))),
+        m.history&&m.history.length?h('div',{className:'dev-history'},
+         h('button',{type:'button',className:'dev-history-toggle',onClick:()=>this.setState({open:Object.assign({},open,{[id]:!isOpen})})},(isOpen?'▾ ':'▸ ')+'История изменений · '+m.history.length),
+         isOpen&&h('ul',{className:'dev-history-list'},m.history.map((x,i)=>h('li',{key:i},h('b',{},x[0]),' — ',x[1])))):null);
+      }))))
+    :h('div',{className:'empty',key:'empty'},'⌕',h('h3',{},'Ничего не найдено'),h('p',{},'Измените фильтры или поисковый запрос.'))
+   ]:
+   h('div',{className:'dev-timeline'},data.timeline.slice().reverse().map((t,i)=>h('article',{key:i,className:'dev-entry'},
+    h('div',{className:'dev-entry-date'},new Date(t.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})),
+    h('div',{className:'dev-entry-body'},h('h3',{},t.title),h('ul',{},t.items.map((x,j)=>h('li',{key:j},x))))))));
+ }
+}
 class GameCatalogPage extends React.Component{
  constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
  componentDidMount(){this.load();}
@@ -269,7 +318,7 @@ class App extends React.Component{
   !home&&h('form',{className:'ref-top-search',onSubmit:e=>{e.preventDefault();this.openSearch(topSearch)}},h(Icon,{name:'search'}),h('input',{value:topSearch,onChange:e=>this.set({topSearch:e.target.value}),placeholder:'Поиск информации на сайте...', 'aria-label':'Поиск информации на сайте'}),h('button',{className:'ref-submit-search',type:'submit','aria-label':'Искать'},h(Icon,{name:'arrow'}))),
   h('div',{className:'ref-header-right'},h('button',{className:'ref-theme',title:'Переключить тему','aria-label':'Переключить тему',type:'button',onClick:()=>{let theme=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=theme;try{localStorage.setItem('kcd2rp-wiki-theme',theme)}catch(e){}this.forceUpdate()}},h(Icon,{name:document.documentElement.dataset.theme==='dark'?'moon':'sun'})),h('span',{className:'ref-lang'},'RU'),!window.KCD2RP_STATIC&&h('button',{className:'ref-editor-link',type:'button',title:'Редактор Wiki',onClick:()=>admin?navigate('/admin'):this.loginOpen()},h(Icon,{name:'globe'})))));
  }
- breadcrumb(){const {view,data}=this.state;if(view==='/')return 'Главная';if(view==='/catalog')return 'Все статьи';if(view.startsWith('/game/item/'))return 'Предмет';if(view.startsWith('/game/recipe/'))return 'Рецепт';if(view==='/game/items')return 'База предметов';if(view==='/game/recipes')return 'Рецепты KCD2';if(view==='/map'||view.startsWith('/map/'))return 'Карта Богемии';if(view==='/icons')return 'Иконки KCD2';if(view.startsWith('/animations'))return 'Анимации NPC';if(view==='/updates')return 'История изменений';if(view==='/admin')return 'Редактор';if(view.startsWith('/category/'))return data.categories.find(c=>c.id===decodeURIComponent(view.split('/')[2]))?.title||'Категория';if(view.startsWith('/article/'))return data.articles.find(a=>a.slug===decodeURIComponent(view.split('/')[2]))?.title||'Статья';return 'Энциклопедия';}
+ breadcrumb(){const {view,data}=this.state;if(view==='/')return 'Главная';if(view==='/catalog')return 'Все статьи';if(view.startsWith('/game/item/'))return 'Предмет';if(view.startsWith('/game/recipe/'))return 'Рецепт';if(view==='/game/items')return 'База предметов';if(view==='/game/recipes')return 'Рецепты KCD2';if(view==='/map'||view.startsWith('/map/'))return 'Карта Богемии';if(view==='/icons')return 'Иконки KCD2';if(view.startsWith('/animations'))return 'Анимации NPC';if(view==='/updates')return 'История изменений';if(view==='/development')return 'Карта развития';if(view==='/admin')return 'Редактор';if(view.startsWith('/category/'))return data.categories.find(c=>c.id===decodeURIComponent(view.split('/')[2]))?.title||'Категория';if(view.startsWith('/article/'))return data.articles.find(a=>a.slug===decodeURIComponent(view.split('/')[2]))?.title||'Статья';return 'Энциклопедия';}
  home(){
  const {data,search,gameMeta}=this.state;
  const categories=data.categories||[];
@@ -282,6 +331,7 @@ class App extends React.Component{
   {to:'/icons',title:'Иконки KCD2',desc:'Библиотека изображений и интерфейсных элементов',icon:'image'},
   {to:'/map',title:'Карта Богемии',desc:'Троски, Кутна-Гора и исследование мира',icon:'map'}];
  const proj=[
+  {to:'/development',title:'Карта развития',desc:'Все механики сервера со статусами и хронология обновлений',icon:'compass'},
   {to:'/catalog',title:'Все статьи',desc:'Полный каталог энциклопедии Богемии',icon:'book',count:data.articles.length},
   {to:'/updates',title:'История изменений',desc:'Обновления и изменения проекта',icon:'clock',count:countFor(data,'updates')}];
  const tile=c=>h(Link,{to:c.to,key:c.to,className:'ref-category'},
@@ -362,7 +412,7 @@ class App extends React.Component{
  }
  loginModal(){if(!this.state.login)return null;return h('div',{className:'modal-overlay',onClick:e=>{if(e.target===e.currentTarget)this.set({login:false})}},h('div',{className:'login-modal'},h('button',{className:'login-close',onClick:()=>this.set({login:false})},'×'),h('span',{className:'login-mark'},'K'),h('div',{className:'page-overline'},'KCD2RP / WIKI'),h('h2',{},'Вход для редакторов'),h('p',{},'Только авторизованные сотрудники могут изменять содержимое энциклопедии.'),h('form',{onSubmit:e=>this.login(e)},h('label',{},'Логин',h('input',{name:'username',autoComplete:'username',required:true,defaultValue:'admin'})),h('label',{},'Пароль',h('input',{type:'password',name:'password',autoComplete:'current-password',required:true})),h('button',{type:'submit',className:'primary-btn',disabled:this.state.busy},'Войти в панель'))))}
  render(){const {data,view,mobile,error,notice}=this.state;if(!data)return h('div',{className:'app-loading'},h('span',{className:'brand-logo'},'K'),h('h2',{},error||'Загружаем летопись Богемии…'),error&&h('button',{onClick:()=>this.load()},'Повторить'));
- let body;if(view==='/')body=this.home();else if(view==='/catalog')body=this.catalog();else if(view==='/updates')body=this.updates();else if(view==='/icons')body=window.WikiIconsPage?h(window.WikiIconsPage):this.notFound();else if(view==='/map'||view.startsWith('/map/'))body=window.WikiExtraMap?h(window.WikiExtraMap,{key:view,admin:this.state.admin,focus:view.startsWith('/map/')?{region:decodeURIComponent(view.split('/')[2]||''),place:decodeURIComponent(view.split('/')[3]||'')}:null}):this.notFound();else if(view==='/animations'||view.startsWith('/animations/'))body=window.WikiExtraAnimations?h(window.WikiExtraAnimations,{key:'animations',clip:view.startsWith('/animations/')?decodeURIComponent(view.slice('/animations/'.length)):null}):this.notFound();else if(view==='/admin')body=this.admin();else if(view==='/game/items')body=h(GameCatalogPage,{key:view,mode:'items',admin:this.state.admin});else if(view==='/game/recipes')body=h(GameCatalogPage,{key:view,mode:'recipes'});else if(view.startsWith('/game/item/'))body=h(GameCatalogPage,{key:view,mode:'item',admin:this.state.admin,id:decodeURIComponent(view.slice('/game/item/'.length))});else if(view.startsWith('/game/recipe/'))body=h(GameCatalogPage,{key:view,mode:'recipe',id:decodeURIComponent(view.slice('/game/recipe/'.length))});else if(view.startsWith('/category/'))body=this.catalog(decodeURIComponent(view.split('/')[2]));else if(view.startsWith('/article/'))body=this.article(decodeURIComponent(view.split('/')[2]));else body=this.notFound();
+ let body;if(view==='/')body=this.home();else if(view==='/catalog')body=this.catalog();else if(view==='/updates')body=this.updates();else if(view==='/icons')body=window.WikiIconsPage?h(window.WikiIconsPage):this.notFound();else if(view==='/map'||view.startsWith('/map/'))body=window.WikiExtraMap?h(window.WikiExtraMap,{key:view,admin:this.state.admin,focus:view.startsWith('/map/')?{region:decodeURIComponent(view.split('/')[2]||''),place:decodeURIComponent(view.split('/')[3]||'')}:null}):this.notFound();else if(view==='/animations'||view.startsWith('/animations/'))body=window.WikiExtraAnimations?h(window.WikiExtraAnimations,{key:'animations',clip:view.startsWith('/animations/')?decodeURIComponent(view.slice('/animations/'.length)):null}):this.notFound();else if(view==='/development')body=h(DevelopmentPage,{key:view});else if(view==='/admin')body=this.admin();else if(view==='/game/items')body=h(GameCatalogPage,{key:view,mode:'items',admin:this.state.admin});else if(view==='/game/recipes')body=h(GameCatalogPage,{key:view,mode:'recipes'});else if(view.startsWith('/game/item/'))body=h(GameCatalogPage,{key:view,mode:'item',admin:this.state.admin,id:decodeURIComponent(view.slice('/game/item/'.length))});else if(view.startsWith('/game/recipe/'))body=h(GameCatalogPage,{key:view,mode:'recipe',id:decodeURIComponent(view.slice('/game/recipe/'.length))});else if(view.startsWith('/category/'))body=this.catalog(decodeURIComponent(view.split('/')[2]));else if(view.startsWith('/article/'))body=this.article(decodeURIComponent(view.split('/')[2]));else body=this.notFound();
  return h('div',{className:'app-shell ref-app-shell'},h('div',{className:'workarea'},this.header(),h('div',{className:'scroll-area'},body,h('footer',{className:'footer'},h('span',{},'© 2026 KCD2RP · Энциклопедия Богемии'),h('div',{},h(Link,{to:'/catalog'},'Все статьи'),h(Link,{to:'/updates'},'Изменения'),h('a',{href:'https://kcd2rp.ru',target:'_blank',rel:'noopener noreferrer'},'Основной сайт ↗'))))),error&&h('div',{className:'toast error',onClick:()=>this.set({error:''})},error,' ×'),notice&&h('div',{className:'toast'},notice),this.loginModal(),this.editor());}
 }
 try{document.documentElement.dataset.theme=localStorage.getItem('kcd2rp-wiki-theme')||'light'}catch(e){document.documentElement.dataset.theme='light'}
