@@ -328,3 +328,13 @@ html:not([data-theme="dark"]) .ref-hero-art.right .ref-hero-illustration{content
 .dev-tabs{display:inline-flex;gap:0;border:1px solid var(--ui-border);border-radius:9px;overflow:hidden;background:var(--ui-surface)}
 .dev-tabs .ref-tab{border:0;border-radius:0;margin:0}
 .dev-tabs .ref-tab+.ref-tab{border-left:1px solid var(--ui-border)}
+
+/* ==== Модальная карточка предмета/рецепта поверх каталога ==== */
+.game-modal-backdrop{position:fixed;inset:0;z-index:90;background:rgba(8,8,12,.62);backdrop-filter:blur(3px);overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:26px 14px}
+.game-modal{position:relative;width:min(1060px,100%);margin:auto;background:var(--ref-bg);border:1px solid var(--ref-border);border-radius:14px;box-shadow:0 30px 90px rgba(0,0,0,.55)}
+.game-modal-close{position:absolute;top:10px;right:12px;z-index:6;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid var(--ref-border);border-radius:10px;background:var(--ref-panel);color:var(--ref-text);font-size:25px;line-height:1;cursor:pointer}
+.game-modal-close:hover{border-color:var(--ref-pink);color:var(--ref-pink)}
+.game-modal .page{max-width:none;width:auto;padding:18px 26px 28px}
+.game-modal .game-back{display:none}
+.game-modal .game-title h1{font-size:33px}
+@media (max-width:690px){.game-modal-backdrop{padding:10px 6px}.game-modal .page{padding:14px 12px 20px}.game-modal-close{top:7px;right:7px;width:36px;height:36px}}
