@@ -90,7 +90,7 @@ writeJson('development', development);
 // Cache busting: a content hash of the frontend bundle versions every asset URL,
 // so browsers pick up new scripts/styles right after each deployment.
 const crypto = await import('node:crypto');
-const bundleFiles = ['app.js', 'wiki-extra.js', 'wiki-icons.js', 'static-api.js', 'style.css', 'wiki-icons.css', 'majestic-reference.css', 'reference-layout.css', 'compact.css'];
+const bundleFiles = ['app.js', 'wiki-filters.js', 'wiki-extra.js', 'wiki-icons.js', 'static-api.js', 'style.css', 'wiki-icons.css', 'majestic-reference.css', 'reference-layout.css', 'compact.css'];
 const digest = crypto.createHash('sha256');
 for (const file of bundleFiles) digest.update(fs.readFileSync(path.join(publicDir, file)));
 const v = digest.digest('hex').slice(0, 10);
@@ -120,6 +120,7 @@ const html = `<!doctype html>
   <script src="./vendor/react.min.js?v=${v}"></script>
   <script src="./vendor/react-dom.min.js?v=${v}"></script>
   <script src="./static-api.js?v=${v}"></script>
+  <script src="./wiki-filters.js?v=${v}"></script>
   <script src="./wiki-extra.js?v=${v}"></script>
   <script src="./wiki-icons.js?v=${v}"></script>
   <script src="./app.js?v=${v}"></script>

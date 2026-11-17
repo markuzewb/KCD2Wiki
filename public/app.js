@@ -95,15 +95,16 @@ class DevelopmentPage extends React.Component{
    h('div',{className:'ref-tabs dev-tabs'},
     h('button',{type:'button',className:'ref-tab'+(tab==='time'?' active':''),onClick:()=>this.setState({tab:'time'})},'Карта изменений · '+fmtCount(data.timeline.length)),
     h('button',{type:'button',className:'ref-tab'+(tab==='mech'?' active':''),onClick:()=>this.setState({tab:'mech'})},'Механики · '+fmtCount(total))),
-   tab==='mech'?[
-    h('div',{className:'extra-chips',key:'filters'},
-     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Раздел'),
-      chip(cat==='all',()=>this.setState({cat:'all'}),'Все · '+fmtCount(total),'all'),
-      data.categories.map(c=>chip(cat===c.id,()=>this.setState({cat:cat===c.id?'all':c.id}),c.title+' · '+c.mechanics.length,c.id))),
-     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Статус'),
-      statuses.map(([id,label])=>chip(status===id,()=>this.setState({status:id}),id==='all'?label:label+' · '+(counts[id]||0),id))),
-     h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Поиск'),
-      h('input',{className:'dev-search-input',value:q,onChange:e=>this.setState({q:e.target.value}),placeholder:'Название или описание механики…','aria-label':'Поиск механики'}))),
+   tab==='mech'?h(window.WikiFilterPanel,{key:'mech',
+    search:{value:q,onChange:v=>this.setState({q:v}),placeholder:'Название или описание механики…'},
+    groups:[
+     {key:'cat',title:'Раздел',value:cat,clearValue:'all',onSelect:v=>this.setState({cat:v}),
+      options:data.categories.map(c=>({value:c.id,label:c.title,count:c.mechanics.length}))},
+     {key:'status',title:'Статус',value:status,clearValue:'all',onSelect:v=>this.setState({status:v}),
+      options:statuses.filter(x=>x[0]!=='all').map(([id,label])=>({value:id,label,count:counts[id]||0}))}
+    ],
+    onReset:()=>this.setState({cat:'all',status:'all',q:''}),
+    total:cats.reduce((n,c)=>n+c.mechanics.length,0),unit:'Механики'},
     cats.length?cats.map(c=>h('section',{key:c.id,className:'dev-cat'},
       h('div',{className:'dev-cat-head'},h(Icon,{name:c.icon}),h('h2',{},c.title),h('span',{className:'dev-cat-desc'},c.desc)),
       h('div',{className:'dev-grid'},c.mechanics.map(m=>{
@@ -116,8 +117,8 @@ class DevelopmentPage extends React.Component{
          h('button',{type:'button',className:'dev-history-toggle',onClick:()=>this.setState({open:Object.assign({},open,{[id]:!isOpen})})},(isOpen?'▾ ':'▸ ')+'История изменений · '+m.history.length),
          isOpen&&h('ul',{className:'dev-history-list'},m.history.map((x,i)=>h('li',{key:i},h('b',{},x[0]),' — ',x[1])))):null);
       }))))
-    :h('div',{className:'empty',key:'empty'},'⌕',h('h3',{},'Ничего не найдено'),h('p',{},'Измените фильтры или поисковый запрос.'))
-   ]:
+    :h('div',{className:'empty',key:'empty'},'⌕',h('h3',{},'Ничего не найдено'),h('p',{},'Измените фильтры или поисковый запрос.')))
+   :
    (()=>{
     const entries=order==='old'?data.timeline.slice():data.timeline.slice().reverse();
     const catOf=id=>data.categories.find(c=>c.id===id);
@@ -175,50 +176,45 @@ class GameCatalogPage extends React.Component{
  catalog(){
   const isItem=this.props.mode==='items',st=this.state;
   const tabs=h('div',{className:'ref-catalog-tabs'},h(Link,{to:'/game/items',className:cls('ref-tab',isItem&&'active')},'Предметы'),h(Link,{to:'/game/recipes',className:cls('ref-tab',!isItem&&'active')},'Рецепты'),h(Link,{to:'/animations',className:'ref-tab'},'Анимации'),h(Link,{to:'/icons',className:'ref-tab'},'Иконки'));
-  const chip=(active,onClick,label,key)=>h('button',{key,className:'extra-chip'+(active?' active':''),onClick},label);
   const subcats=isItem&&st.cat?(st.meta?.itemSubcats?.[st.cat]||[]):[];
-  const catRow=st.meta?.itemCategories?.find(c=>c[0]===st.cat);
-  const itemChips=isItem&&h('div',{className:'extra-chips ref-item-chips'},
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Категория'),
-      (st.meta?.itemCategories||[]).map(c=>chip(st.cat===c[0],()=>this.setState({cat:st.cat===c[0]?'':c[0],sub:'',page:1},()=>this.load()),(c[3]?c[3]+' ':'')+c[1]+' · '+fmtCount(c[2]),c[0]))),
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
-      subcats.length?[
-        chip(!st.sub,()=>this.filter('sub',''),'Все · '+fmtCount(catRow?catRow[2]:0),'all-subs'),
-        ...subcats.map(s=>chip(st.sub===s[0],()=>this.filter('sub',st.sub===s[0]?'':s[0]),s[0]+' · '+fmtCount(s[1]),s[0]))
-      ]:h('span',{className:'extra-chip-hint',key:'hint'},'Выберите категорию выше — здесь появятся её подкатегории')),
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Фильтр'),
-      [['result','Результаты изготовления'],['ingredient','Ингредиенты'],['priced','Со справочной ценой']].map(v=>chip(st.role===v[0],()=>this.filter('role',st.role===v[0]?'all':v[0]),v[1],v[0]))),
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
-      [['','Название А–Я'],['name-desc','Название Я–А'],['price-desc','Цена: дорогие'],['price-asc','Цена: дешёвые'],['weight-desc','Вес: тяжёлые'],['weight-asc','Вес: лёгкие']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
-    (st.cat||st.sub||st.role!=='all'||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',cat:'',sub:'',role:'all',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
   const crafts=st.meta?.recipeCrafts||Object.entries(st.meta?.craftNames||{}).map(([k,v])=>[k,v,0,'🛠️']);
   const recipeSubs=!isItem&&st.craft?(st.meta?.recipeSubcats?.[st.craft]||[]):[];
-  const craftRow=crafts.find(c=>c[0]===st.craft);
-  const recipeChips=!isItem&&h('div',{className:'extra-chips ref-item-chips'},
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Ремесло'),
-      crafts.map(c=>chip(st.craft===c[0],()=>this.setState({craft:st.craft===c[0]?'':c[0],sub:'',page:1},()=>this.load()),(c[3]?c[3]+' ':'')+c[1]+(c[2]?' · '+fmtCount(c[2]):''),c[0]))),
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
-      recipeSubs.length?[
-        chip(!st.sub,()=>this.filter('sub',''),'Все'+(craftRow&&craftRow[2]?' · '+fmtCount(craftRow[2]):''),'all-subs'),
-        ...recipeSubs.map(s=>chip(st.sub===s[0],()=>this.filter('sub',st.sub===s[0]?'':s[0]),s[0]+' · '+fmtCount(s[1]),s[0]))
-      ]:h('span',{className:'extra-chip-hint',key:'hint'},'Выберите ремесло выше — здесь появятся подкатегории его изделий'),
-    ),
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Уровень'),
-      Array.from({length:10},(_,i)=>String(i+1)).map(v=>chip(st.level===v,()=>this.filter('level',st.level===v?'':v),v,'lvl'+v))),
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Тип'),
-      Object.entries(kindLabels).map(([k,v])=>chip(st.kind===k,()=>this.filter('kind',st.kind===k?'':k),v,k))),
-    h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Порядок'),
-      [['','Название А–Я'],['name-desc','Название Я–А'],['level-asc','Уровень: низкие'],['level-desc','Уровень: высокие'],['ingr-asc','Ингредиенты: меньше'],['ingr-desc','Ингредиенты: больше']].map(v=>chip((st.sort||'')===v[0],()=>this.filter('sort',v[0]),v[1],v[0]||'default'))),
-    (st.craft||st.sub||st.level||st.kind||st.sort||st.q)&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.setState({q:'',craft:'',sub:'',level:'',kind:'',sort:'',page:1},()=>this.load())},'✕ Сбросить всё'));
+  const groups=isItem?[
+    {key:'cat',title:'Категория',value:st.cat,onSelect:v=>this.setState({cat:v,sub:'',page:1},()=>this.load()),
+      options:(st.meta?.itemCategories||[]).map(c=>({value:c[0],label:c[1],count:c[2],icon:c[3]}))},
+    {key:'sub',title:'Подкатегория',value:st.sub,onSelect:v=>this.filter('sub',v),
+      options:subcats.map(x=>({value:x[0],label:x[0],count:x[1]})),
+      hint:st.cat?'В этой категории нет подкатегорий':'Выберите категорию — здесь появятся её подкатегории'},
+    {key:'role',title:'Фильтр',value:st.role,clearValue:'all',onSelect:v=>this.filter('role',v),
+      options:[['result','Результаты изготовления'],['ingredient','Ингредиенты'],['priced','Со справочной ценой']].map(x=>({value:x[0],label:x[1]}))},
+    {key:'sort',title:'Порядок',value:st.sort||'',collapsed:true,onSelect:v=>this.filter('sort',v),
+      options:[['','Название А–Я'],['name-desc','Название Я–А'],['price-desc','Цена: дорогие'],['price-asc','Цена: дешёвые'],['weight-desc','Вес: тяжёлые'],['weight-asc','Вес: лёгкие']].map(x=>({value:x[0],label:x[1]}))}
+  ]:[
+    {key:'craft',title:'Ремесло',value:st.craft,onSelect:v=>this.setState({craft:v,sub:'',page:1},()=>this.load()),
+      options:crafts.map(c=>({value:c[0],label:c[1],count:c[2]||null,icon:c[3]}))},
+    {key:'sub',title:'Подкатегория',value:st.sub,onSelect:v=>this.filter('sub',v),
+      options:recipeSubs.map(x=>({value:x[0],label:x[0],count:x[1]})),
+      hint:st.craft?'У этого ремесла нет подкатегорий':'Выберите ремесло — здесь появятся подкатегории его изделий'},
+    {key:'level',title:'Уровень мастерства',value:st.level,collapsed:true,onSelect:v=>this.filter('level',v),
+      options:Array.from({length:10},(_,i)=>({value:String(i+1),label:'Уровень '+(i+1)}))},
+    {key:'kind',title:'Тип рецепта',value:st.kind,collapsed:true,onSelect:v=>this.filter('kind',v),
+      options:Object.entries(kindLabels).map(([k,v])=>({value:k,label:v}))},
+    {key:'sort',title:'Порядок',value:st.sort||'',collapsed:true,onSelect:v=>this.filter('sort',v),
+      options:[['','Название А–Я'],['name-desc','Название Я–А'],['level-asc','Уровень: низкие'],['level-desc','Уровень: высокие'],['ingr-asc','Ингредиенты: меньше'],['ingr-desc','Ингредиенты: больше']].map(x=>({value:x[0],label:x[1]}))}
+  ];
+  const onReset=isItem
+    ?()=>this.setState({q:'',cat:'',sub:'',role:'all',sort:'',page:1},()=>this.load())
+    :()=>this.setState({q:'',craft:'',sub:'',level:'',kind:'',sort:'',page:1},()=>this.load());
   const filters=h('div',{className:'ref-catalog-filters'},h(SearchInput,{value:st.q,onChange:v=>this.filter('q',v),placeholder:isItem?'Поиск предметов...':'Поиск рецептов...'}));
-  const cardGrid=st.rows.length?h('div',{className:'game-results ref-card-gallery'},st.rows.map(r=>isItem?this.itemRow(r):this.recipeRow(r))):h('div',{className:'game-placeholder'},'Ничего не найдено. Измените условия поиска.');
+  const cardGrid=st.rows.length?h('div',{className:'game-results ref-card-gallery'},st.rows.map(r=>isItem?this.itemRow(r):this.recipeRow(r))):h('div',{className:'game-placeholder'},'Ничего не найдено. Измените условия поиска или фильтры.');
   const results=st.error?this.failed():st.loading&&!st.rows.length?this.loading():h('div',{className:'ref-catalog-results'},cardGrid,h(WikiCatalogPager,{page:st.page,total:st.total,pages:st.pages,onChange:n=>this.page(n)}));
   return h('div',{className:'page game-page ref-catalog-page'},
-    this.intro(isItem?'Каталог предметов':'Каталог рецептов',isItem?'Предметы KCD2RP — изображения, названия и игровые идентификаторы.':'Рецепты игрового мира: предметы, необходимые материалы и навыки.',''),
+    this.intro(isItem?'Каталог предметов':'Каталог рецептов',isItem?'Предметы KCD2RP — изображения, названия и игровые идентификаторы.':'Рецепты игрового мира: предметы, необходимые материалы и навыки.'),
     h('div',{className:'ref-catalog-toolbar'},tabs,filters),
-    itemChips||recipeChips,
-    h('div',{className:'ref-catalog-count'},'Найдено: ',fmtCount(st.total),' · ',isItem?'Предметы':'Рецепты'),
-    results);
+    h(window.WikiFilterPanel,{
+      search:{value:st.q,onChange:v=>this.filter('q',v),hidden:true},
+      groups,onReset,total:st.total,unit:isItem?'Предметы':'Рецепты'},
+      results));
  }
  copy(text,marker){if(!text)return;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).catch(()=>{});else{const el=document.createElement('textarea');el.value=text;document.body.append(el);el.select();document.execCommand('copy');el.remove();}
   if(marker){clearTimeout(this._copyTimer);this.setState({copied:marker});this._copyTimer=setTimeout(()=>this.setState({copied:''}),1300);}}
@@ -384,21 +380,23 @@ class App extends React.Component{
  const activeTag=tag&&tag!=='all'&&tagMap.has(tag)?tag:'all';
  let articles=base.filter(a=>(type==='all'||a.type===type)&&(activeTag==='all'||(a.tags||[]).includes(activeTag)));
  const q=search.trim().toLocaleLowerCase('ru');if(q)articles=articles.filter(a=>(a.title+' '+a.description+' '+a.tags.join(' ')+' '+a.blocks.map(b=>b.value||'').join(' ')).toLocaleLowerCase('ru').includes(q));
- const chip=(active,onClick,label,key)=>h('button',{key,type:'button',className:'extra-chip'+(active?' active':''),onClick},label);
- const chips=h('div',{className:'extra-chips'},
-  !fixedCategory&&h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Категория'),
-   chip(category==='all',()=>this.set({category:'all',tag:'all'}),'Все · '+fmtCount(data.articles.length),'all-cat'),
-   data.categories.map(cc=>chip(category===cc.id,()=>this.set({category:category===cc.id?'all':cc.id,tag:'all'}),cc.title+' · '+fmtCount(countFor(data,cc.id)),cc.id))),
-  h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Подкатегория'),
-   current==='all'?h('span',{className:'extra-chip-hint'},'Выберите категорию выше — здесь появятся её подкатегории'):
-   tags.length?[chip(activeTag==='all',()=>this.set({tag:'all'}),'Все · '+fmtCount(base.length),'all-tags'),...tags.map(([t,n])=>chip(activeTag===t,()=>this.set({tag:activeTag===t?'all':t}),t+' · '+fmtCount(n),t))]:
-   h('span',{className:'extra-chip-hint'},'В этом разделе пока нет подкатегорий')));
+const typeNames={article:'Статьи',catalog:'Каталоги',guide:'Руководства',changelog:'Обновления'};
+ const groups=[
+  !fixedCategory&&{key:'cat',title:'Категория',value:current,clearValue:'all',onSelect:v=>this.set({category:v,tag:'all'}),
+   options:data.categories.map(cc=>({value:cc.id,label:cc.title,count:countFor(data,cc.id)}))},
+  {key:'tag',title:'Подкатегория',value:activeTag,clearValue:'all',onSelect:v=>this.set({tag:v}),
+   options:tags.map(([t,n])=>({value:t,label:t,count:n})),
+   hint:current==='all'?'Выберите категорию — здесь появятся её подкатегории':'В этом разделе пока нет подкатегорий'},
+  {key:'type',title:'Формат',value:type,clearValue:'all',onSelect:v=>this.set({type:v}),
+   options:Object.entries(typeNames).map(([v,l])=>({value:v,label:l}))}
+ ];
+ const onReset=()=>this.set(fixedCategory?{tag:'all',type:'all',search:''}:{category:'all',tag:'all',type:'all',search:''});
  return h('div',{className:'page catalog-page'},h('div',{className:'page-overline'},fixedCategory?'РАЗДЕЛ ЭНЦИКЛОПЕДИИ':'БИБЛИОТЕКА БОГЕМИИ'),h('div',{className:'catalog-heading'},h('div',{},h('h1',{},c?c.title:'Каталог знаний'),h('p',{},c?c.description:'Справочники, путеводители и статьи обо всех аспектах жизни в KCD2RP.')),this.state.admin&&h('button',{className:'outline-btn',onClick:()=>this.startEdit()},'+ Новая статья')),
- h('div',{className:'catalog-panel'},h(SearchInput,{value:search,onChange:v=>this.set({search:v}),placeholder:'Поиск по названию, содержимому и тегам…'}),
- chips,
- h('div',{className:'filters'},h('select',{value:type,onChange:e=>this.set({type:e.target.value})},['all','article','catalog','guide','changelog'].map((v,i)=>h('option',{key:v,value:v},['Все форматы','Статьи','Каталоги','Руководства','Обновления'][i])))),
- h('div',{className:'catalog-meta'},h('span',{},'Найдено материалов: ',h('b',{},articles.length)),h('span',{},'Сортировка: по названию'))),
- articles.length?h('div',{className:'catalog-results'},articles.map(a=>h(ArticleCard,{key:a.id,a,categories:data.categories,compact:true}))):h('div',{className:'empty'},'⌕',h('h3',{},'Ничего не найдено'),h('p',{},'Попробуйте изменить поисковый запрос или фильтры.')));
+ h('div',{className:'catalog-panel'},h(SearchInput,{value:search,onChange:v=>this.set({search:v}),placeholder:'Поиск по названию, содержимому и тегам…'})),
+ h(window.WikiFilterPanel,{
+  search:{value:search,onChange:v=>this.set({search:v}),hidden:true},
+  groups,onReset,total:articles.length,unit:'Материалы'},
+ articles.length?h('div',{className:'catalog-results'},articles.map(a=>h(ArticleCard,{key:a.id,a,categories:data.categories,compact:true}))):h('div',{className:'empty'},'⌕',h('h3',{},'Ничего не найдено'),h('p',{},'Попробуйте изменить поисковый запрос или фильтры.'))));
  }
  article(slug){let {data,admin}=this.state;let a=data.articles.find(x=>x.slug===slug);if(!a)return this.notFound();let cat=data.categories.find(c=>c.id===a.category);let related=data.articles.filter(x=>x.category===a.category&&x.id!==a.id).slice(0,3);
  return h('div',{className:'page article-page'},h('div',{className:'article-breadcrumb'},h(Link,{to:'/catalog'},'Каталог'),h('span',{},'›'),h(Link,{to:'/category/'+a.category},cat?.title||'Раздел'),h('span',{},'›'),h('span',{className:'crumb-current'},a.title)),

@@ -255,3 +255,54 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 .dev-entry-tags button{border:1px solid var(--ui-border);background:var(--ui-faint);color:var(--wiki-text-secondary);border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;cursor:pointer}
 .dev-entry-tags button:hover{border-color:var(--wiki-accent-primary);color:var(--wiki-accent-primary)}
 @media(max-width:760px){.dev-grid{grid-template-columns:1fr}.dev-month{margin-left:0}.dev-entry{grid-template-columns:1fr;gap:4px}.dev-entry-date{text-align:left;padding-top:0}.dev-entry-dot{display:none}}
+
+/* ==== Универсальная боковая панель фильтров (wf-*) ==== */
+.wf-layout{display:grid;grid-template-columns:248px minmax(0,1fr);gap:18px;align-items:start;margin-top:4px}
+.wf-side{position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto;border:1px solid var(--ui-border);background:var(--ui-surface);border-radius:10px;padding:10px 12px 12px;display:flex;flex-direction:column;scrollbar-width:thin}
+.wf-side-head{display:flex;align-items:center;gap:8px;padding:2px 0 8px;border-bottom:1px solid var(--ui-line,var(--ui-border))}
+.wf-side-head>span{flex:1;font-size:11.5px;font-weight:850;letter-spacing:.1em;text-transform:uppercase;color:var(--wiki-text-secondary)}
+.wf-reset{border:0;background:none;color:var(--wiki-accent-primary);font-size:12px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap}
+.wf-close{display:none;border:0;background:none;color:var(--wiki-text-secondary);font-size:19px;line-height:1;cursor:pointer;padding:0 2px}
+.wf-search{display:flex;align-items:center;gap:6px;margin:9px 0 4px;border:1px solid var(--ui-border);background:var(--ui-input);border-radius:8px;padding:5px 9px}
+.wf-search:focus-within{border-color:var(--wiki-accent-primary)}
+.wf-search input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:13px;color:var(--wiki-text-primary)}
+.wf-search button{border:0;background:none;color:var(--wiki-text-secondary);cursor:pointer;font-size:15px;line-height:1;padding:0}
+.wf-group{border-bottom:1px solid var(--ui-line,var(--ui-border));padding:1px 0 7px}
+.wf-group:last-of-type{border-bottom:0;padding-bottom:0}
+.wf-group-head{width:100%;display:flex;align-items:center;gap:7px;border:0;background:none;padding:8px 0 4px;cursor:pointer;font-size:13px;font-weight:800;color:var(--wiki-text-primary);text-align:left}
+.wf-group-head>span:first-child{flex:1}
+.wf-group-dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--wiki-accent-primary)}
+.wf-chevron{color:var(--wiki-text-secondary);font-size:11px}
+.wf-group-body{display:flex;flex-direction:column;gap:1px;padding-bottom:2px}
+.wf-hint{margin:2px 0;font-size:12px;color:var(--wiki-text-secondary);line-height:1.45}
+.wf-opt-search{margin:3px 0 5px;border:1px solid var(--ui-border);background:var(--ui-input);color:var(--wiki-text-primary);border-radius:7px;padding:4px 9px;font-size:12.5px;outline:0}
+.wf-opt-search:focus{border-color:var(--wiki-accent-primary)}
+.wf-opt{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;border-radius:7px;padding:4px 7px;font-size:13px;color:var(--wiki-text-primary);cursor:pointer;text-align:left;line-height:1.45}
+.wf-opt:hover{background:var(--ui-hover,rgba(127,127,127,.09))}
+.wf-opt-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wf-opt-count{flex:none;font-size:11.5px;font-weight:700;color:var(--wiki-text-secondary);background:var(--ui-faint,rgba(127,127,127,.09));border-radius:999px;padding:0 7px;line-height:1.7}
+.wf-opt.active{background:var(--wiki-accent-primary);color:#fff;font-weight:700}
+.wf-opt.active .wf-opt-count{background:rgba(255,255,255,.24);color:#fff}
+.wf-more{border:0;background:none;color:var(--wiki-accent-primary);font-size:12px;font-weight:700;cursor:pointer;text-align:left;padding:3px 7px}
+.wf-main{min-width:0}
+.wf-topbar{display:flex;align-items:center;gap:10px;margin:0 0 8px}
+.wf-mobile-toggle{display:none;border:1px solid var(--ui-border);background:var(--ui-surface);color:var(--wiki-text-primary);border-radius:8px;padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer;align-items:center;gap:7px}
+.wf-count{font-size:13.5px;color:var(--wiki-text-secondary)}
+.wf-count b{color:var(--wiki-text-primary);font-weight:800}
+.wf-pills{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.wf-pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--wiki-accent-primary);background:var(--ui-surface);color:var(--wiki-accent-primary);border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:700;cursor:pointer;line-height:1.7;max-width:100%}
+.wf-pill i{font-style:normal;font-size:14px;line-height:1}
+.wf-pill:hover{background:var(--wiki-accent-primary);color:#fff}
+.wf-pill-reset{border-color:var(--ui-border);color:var(--wiki-text-secondary)}
+.wf-pill-reset:hover{background:var(--ui-hover,rgba(127,127,127,.09));color:var(--wiki-text-primary);border-color:var(--ui-border)}
+.wf-apply{display:none}
+.wf-backdrop{display:none}
+@media (max-width:960px){
+ .wf-layout{display:block}
+ .wf-side{display:none}
+ .wf-mobile-toggle{display:inline-flex}
+ .wf-backdrop{display:block;position:fixed;inset:0;z-index:70;background:rgba(10,10,14,.55)}
+ .wf-open .wf-side{display:flex;position:fixed;z-index:75;left:50%;transform:translateX(-50%);top:12px;bottom:12px;width:min(430px,calc(100vw - 24px));max-height:none;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+ .wf-open .wf-close{display:block}
+ .wf-apply{display:block;position:sticky;bottom:-12px;margin:10px -2px 0;border:0;background:var(--wiki-accent-primary);color:#fff;border-radius:9px;padding:10px;font-size:14px;font-weight:800;cursor:pointer}
+}

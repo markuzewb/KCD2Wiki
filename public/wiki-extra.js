@@ -41,17 +41,24 @@ class Animations extends React.Component{
   return h('div',{className:'page extra-page'},head,
     h('div',{className:'extra-kpis'},h('div',{},h('small',{},'КЛИПОВ В КАТАЛОГЕ'),h('strong',{},fmt(s.meta?.count||9006))),h('div',{},h('small',{},'КАТЕГОРИЙ'),h('strong',{},fmt(catalog.length||37))),h('div',{},h('small',{},'ПО НАСТРОЙКАМ'),h('strong',{},fmt(s.total)))),
     h('div',{className:'extra-tabs'},h('a',{href:wikiUrl('/game/items'),onClick:e=>{e.preventDefault();navigate('/game/items')}},'Предметы'),h('a',{href:wikiUrl('/game/recipes'),onClick:e=>{e.preventDefault();navigate('/game/recipes')}},'Рецепты'),h('span',{className:'active'},'Анимации NPC'),h('a',{href:wikiUrl('/icons'),onClick:e=>{e.preventDefault();navigate('/icons')}},'Иконки')),
-    h('div',{className:'extra-filters'},
-      h('label',{},'Поиск клипа',h('input',{value:s.q,placeholder:'Например: кузнец, молитва, idle, sit…',onChange:e=>this.change('q',e.target.value),'aria-label':'Поиск анимаций'})),
-      h('label',{},'Категория',h('select',{value:s.cat,onChange:e=>this.change('cat',e.target.value)},h('option',{value:''},'Все категории'),catalog.map(c=>h('option',{value:c.name,key:c.name},(c.icon?c.icon+' ':'')+c.name+' · '+fmt(c.count))))),
-      h('label',{},'Подкатегория',h('select',{value:s.sub,disabled:!activeCat,onChange:e=>this.change('sub',e.target.value)},h('option',{value:''},activeCat?'Все подкатегории':'Сначала категория'),(activeCat?.subs||[]).map(x=>h('option',{value:x[0],key:x[0]},x[0]+' · '+fmt(x[1]))))),
-      h('label',{},'Семейство',h('select',{value:s.family,onChange:e=>this.change('family',e.target.value)},h('option',{value:''},'Все семейства'),Object.entries(s.meta?.families||{}).map(([k,n])=>h('option',{value:k,key:k},familyLabel(k)+' · '+fmt(n))))),
-      h('span',{className:'extra-filter-count'},fmt(s.total)+' найдено')),
-    h('div',{className:'extra-chips'},
-      this.chips('Тип',kindNames,'kind'),
-      this.chips('Фаза',Object.fromEntries(Object.entries(phaseShort).map(([full,short])=>[full,short])),'phase'),
-      this.chips('Поза',poseNames,'pose'),
-      filtersOn&&h('button',{className:'extra-chip extra-chip-reset',onClick:()=>this.resetFilters()},'✕ Сбросить всё')),
+    h(window.WikiFilterPanel,{
+     search:{value:s.q,onChange:v=>this.change('q',v),placeholder:'Например: кузнец, молитва, idle, sit…'},
+     groups:[
+      {key:'cat',title:'Категория',value:s.cat,onSelect:v=>this.change('cat',v),
+       options:catalog.map(c=>({value:c.name,label:c.name,count:c.count,icon:c.icon}))},
+      {key:'sub',title:'Подкатегория',value:s.sub,onSelect:v=>this.change('sub',v),
+       options:(activeCat?.subs||[]).map(x=>({value:x[0],label:x[0],count:x[1]})),
+       hint:s.cat?'В этой категории нет подкатегорий':'Выберите категорию — здесь появятся её подкатегории'},
+      {key:'family',title:'Семейство',value:s.family,collapsed:true,onSelect:v=>this.change('family',v),
+       options:Object.entries(s.meta?.families||{}).map(([k,n])=>({value:k,label:familyLabel(k),count:n}))},
+      {key:'kind',title:'Тип',value:s.kind,collapsed:true,onSelect:v=>this.change('kind',v),
+       options:Object.entries(kindNames).map(([k,v])=>({value:k,label:v}))},
+      {key:'phase',title:'Фаза',value:s.phase,collapsed:true,onSelect:v=>this.change('phase',v),
+       options:Object.entries(phaseShort).map(([full,short])=>({value:full,label:short}))},
+      {key:'pose',title:'Поза',value:s.pose,collapsed:true,onSelect:v=>this.change('pose',v),
+       options:Object.entries(poseNames).map(([k,v])=>({value:k,label:v}))}
+     ],
+     onReset:()=>this.resetFilters(),total:s.total,unit:'Клипы'},
     s.error&&h('div',{className:'extra-alert'},s.error),
     this.props.clip&&h('section',{className:'extra-animation-detail'},h('button',{className:'extra-back',onClick:()=>navigate('/animations')},'← Ко всем анимациям'),a?h('div',{},
       h('span',{className:'page-overline'},'КАРТОЧКА АНИМАЦИИ'),
@@ -81,7 +88,7 @@ class Animations extends React.Component{
         h('span',{className:'extra-family',title:row.cat||''},(row.catIcon?row.catIcon+' ':'')+(row.cat||row.families.map(familyLabel).join(', '))),
         h('button',{className:'extra-copy',onClick:()=>this.copy(row.clip),title:'Скопировать название анимации'},'⧉ Копировать'))):h('div',{className:'extra-empty'},'Совпадений не найдено')),
     h('nav',{className:'extra-pager','aria-label':'Страницы анимаций'},h('button',{disabled:s.page<=1,onClick:()=>this.page(s.page-1)},'← Назад'),h('span',{},'Страница '+s.page+' из '+s.pages),h('button',{disabled:s.page>=s.pages,onClick:()=>this.page(s.page+1)},'Вперёд →')),
-    h('p',{className:'extra-source'},'Источник: каталог KCD:MP + база KCD2BaseItem (русские названия, описания и классификация) · импорт '+(s.meta?.imported||'2026-10-23')+'. Указаны внутренние имена, не гарантированные действия для каждой модели.'));
+    h('p',{className:'extra-source'},'Источник: каталог KCD:MP + база KCD2BaseItem (русские названия, описания и классификация) · импорт '+(s.meta?.imported||'2026-10-23')+'. Указаны внутренние имена, не гарантированные действия для каждой модели.')));
  }
 }
 
