@@ -30,7 +30,7 @@ class WikiFilterPanel extends React.Component{
     h('span',{className:'wf-chevron'},closed?'▸':'▾')),
    closed?null:h('div',{className:'wf-group-body'},
     options.length?[
-     withSearch?h('input',{key:'s',className:'wf-opt-search',value:rawQ,placeholder:'Найти в списке…','aria-label':'Поиск по фильтру «'+g.title+'»',onChange:e=>this.setState(s=>({optQ:Object.assign({},s.optQ,{[g.key]:e.target.value})}))}):null,
+     withSearch?h('input',{key:'s',className:'wf-opt-search',value:rawQ,placeholder:'Найти в списке…','aria-label':'Поиск по фильтру «'+g.title+'»',onChange:e=>{const v=e.target.value;this.setState(s=>({optQ:Object.assign({},s.optQ,{[g.key]:v})}));}}):null,
      ...shown.map(o=>h('button',{key:String(o.value),type:'button',className:'wf-opt'+(g.value===o.value?' active':''),onClick:()=>g.onSelect(g.value===o.value?cv:o.value)},
       h('span',{className:'wf-opt-label'},(o.icon?o.icon+' ':'')+o.label),
       o.count!=null?h('span',{className:'wf-opt-count'},fmt(o.count)):null)),
