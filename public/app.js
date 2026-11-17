@@ -146,10 +146,10 @@ class DevelopmentPage extends React.Component{
  }
 }
 class GameCatalogPage extends React.Component{
- constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],recipe:null,loading:true,error:'',copied:''};this._seq=0;this._timer=null;this._copyTimer=null;}
- componentDidMount(){this.load();}
- componentDidUpdate(prev){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}}
- componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;}
+ constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],recipe:null,loading:true,error:'',copied:'',modal:null};this._seq=0;this._timer=null;this._copyTimer=null;}
+ componentDidMount(){this.load();this._esc=e=>{if(e.key==='Escape'&&this.state.modal)this.setState({modal:null});};if(!this.props.inModal)window.addEventListener('keydown',this._esc);}
+ componentDidUpdate(prev,prevState){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}if(prevState&&!!prevState.modal!==!!this.state.modal&&!this.props.inModal){document.body.style.overflow=this.state.modal?'hidden':'';}}
+ componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;if(this._esc)window.removeEventListener('keydown',this._esc);if(this.state.modal&&!this.props.inModal)document.body.style.overflow='';}
  filter(name,value){this.setState({[name]:value,page:1},()=>{clearTimeout(this._timer);this._timer=setTimeout(()=>this.load(),220);});}
  page(n){this.setState({page:n},()=>this.load());}
  async load(){const seq=++this._seq;const st=this.state;const mode=this.props.mode;let url;
@@ -214,7 +214,8 @@ class GameCatalogPage extends React.Component{
     h(window.WikiFilterPanel,{
       search:{value:st.q,onChange:v=>this.filter('q',v),hidden:true},
       groups,onReset,total:st.total,unit:isItem?'Предметы':'Рецепты'},
-      results));
+      results),
+    this.modalBox());
  }
  copy(text,marker){if(!text)return;if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).catch(()=>{});else{const el=document.createElement('textarea');el.value=text;document.body.append(el);el.select();document.execCommand('copy');el.remove();}
   if(marker){clearTimeout(this._copyTimer);this.setState({copied:marker});this._copyTimer=setTimeout(()=>this.setState({copied:''}),1300);}}
@@ -226,7 +227,7 @@ class GameCatalogPage extends React.Component{
     :(price!=null?fmtPrice(price):(many&&item.priceMin!=null?fmtPrice(item.priceMin):null));
   const metaLine=[priceText,fmtWeight(item.weight),item.damage?'⚔ '+fmtCount(item.damage):null].filter(Boolean).join(' · ');
   const cls=item.internal||item.english||'';
-  return h(Link,{key:item.id,to:'/game/item/'+item.id,className:'game-result ref-item-card'},
+  return h(Link,{key:item.id,to:'/game/item/'+item.id,className:'game-result ref-item-card',onClick:e=>this.cardClick(e,'item',item.id)},
    h('div',{className:'ref-item-art'},
      h('span',{className:'ref-item-id'},item.id&&item.id.length>13?item.id.slice(0,8):item.id),
      cls?h('button',{className:'ref-item-copy',title:'Скопировать класснейм: '+cls,'aria-label':'Скопировать класснейм',onClick:e=>{e.preventDefault();e.stopPropagation();this.copy(cls,item.id);}},this.state.copied===item.id?'✓':'⧉'):null,
@@ -236,9 +237,15 @@ class GameCatalogPage extends React.Component{
  recipeRow(r){
   const many=(r.variants||1)>1;
   const lvl=many&&r.levelMin!=null&&r.levelMax!=null&&r.levelMin!==r.levelMax?'Ур. '+r.levelMin+'–'+r.levelMax:'Ур. '+(r.level??'—');
-  return h(Link,{key:r.id,to:'/game/recipe/'+r.id,className:'game-result ref-item-card'},h('div',{className:'ref-item-art'},h('span',{className:'ref-item-id'},lvl),
+  return h(Link,{key:r.id,to:'/game/recipe/'+r.id,className:'game-result ref-item-card',onClick:e=>this.cardClick(e,'recipe',r.id)},h('div',{className:'ref-item-art'},h('span',{className:'ref-item-id'},lvl),
    many?h('span',{className:'ref-item-variants',title:'Вариантов рецепта: '+r.variants},'× '+fmtCount(r.variants)):null,
    r.outputImageUrl?h('img',{src:wikiUrl(r.outputImageUrl),alt:'',loading:'lazy'}):h('span',{className:'ref-art-placeholder'},h(Icon,{name:'hammer'}))),h('div',{className:'ref-item-details'},h('strong',{},r.name),h('span',{},r.craftName||'Рецепт KCD2')))}
+ cardClick(e,kind,id){if(this.props.inModal)return;const mode=this.props.mode;if(mode!=='items'&&mode!=='recipes')return;if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||e.button!==0)return;e.preventDefault();this.setState({modal:{kind,id}});}
+ modalIntercept(e){const a=e.target&&e.target.closest?e.target.closest('a[href]'):null;if(!a)return;if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey||e.button!==0)return;const href=a.getAttribute('href')||'';const m=href.match(/\/game\/(item|recipe)\/([^\/?#]+)\/?(?:[?#].*)?$/);if(m){e.preventDefault();e.stopPropagation();this.setState({modal:{kind:m[1],id:decodeURIComponent(m[2])}});return;}this.setState({modal:null});}
+ modalBox(){const m=this.state.modal;if(!m)return null;return h('div',{className:'game-modal-backdrop',onMouseDown:e=>{if(e.target===e.currentTarget)this.setState({modal:null});}},
+  h('div',{className:'game-modal',role:'dialog','aria-modal':true,onClickCapture:e=>this.modalIntercept(e)},
+   h('button',{type:'button',className:'game-modal-close','aria-label':'Закрыть',title:'Закрыть (Esc)',onClick:()=>this.setState({modal:null})},'×'),
+   h(GameCatalogPage,{key:'m-'+m.kind+'-'+m.id,mode:m.kind,id:m.id,admin:this.props.admin,inModal:true})));}
  field(name,val){return h('div',{className:'game-field'},h('small',{},name),h('strong',{},val==null?'—':val));}
  recipeVariants(r){
   const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
