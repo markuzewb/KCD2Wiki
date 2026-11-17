@@ -75,10 +75,10 @@ function WikiCatalogPager({page,total,pages,onChange}){
    h('button',{type:'button',disabled:page>=pages,onClick:()=>onChange(Math.min(pages,page+1))},'Далее →'));
 }
 class DevelopmentPage extends React.Component{
- constructor(p){super(p);this.state={data:null,tab:'mech',cat:'all',status:'all',q:'',open:{},error:''};}
+ constructor(p){super(p);this.state={data:null,tab:'time',order:'old',cat:'all',status:'all',q:'',open:{},error:''};}
  componentDidMount(){wikiFetch('/api/development').then(r=>r.json()).then(d=>this.setState({data:d})).catch(()=>this.setState({error:'Не удалось загрузить карту развития'}));}
  render(){
-  const {data,tab,cat,status,q,open,error}=this.state;
+  const {data,tab,order,cat,status,q,open,error}=this.state;
   if(error)return h('div',{className:'page'},h('div',{className:'empty'},'⚠',h('h3',{},error)));
   if(!data)return h('div',{className:'page'},h('div',{className:'loading'},'Загружаем карту развития…'));
   const statuses=[['all','Все'],['done','Работает'],['wip','Дорабатывается'],['plan','Анонсировано']];
@@ -93,8 +93,8 @@ class DevelopmentPage extends React.Component{
    h('div',{className:'page-overline'},'ПРОЕКТ KCD2RP'),
    h('div',{className:'catalog-heading'},h('div',{},h('h1',{},'Карта развития'),h('p',{},'Механики сервера и хронология обновлений по материалам новостного канала · '+data.period))),
    h('div',{className:'ref-tabs dev-tabs'},
-    h('button',{type:'button',className:'ref-tab'+(tab==='mech'?' active':''),onClick:()=>this.setState({tab:'mech'})},'Карта механик · '+fmtCount(total)),
-    h('button',{type:'button',className:'ref-tab'+(tab==='time'?' active':''),onClick:()=>this.setState({tab:'time'})},'Хронология · '+fmtCount(data.timeline.length))),
+    h('button',{type:'button',className:'ref-tab'+(tab==='time'?' active':''),onClick:()=>this.setState({tab:'time'})},'Карта изменений · '+fmtCount(data.timeline.length)),
+    h('button',{type:'button',className:'ref-tab'+(tab==='mech'?' active':''),onClick:()=>this.setState({tab:'mech'})},'Механики · '+fmtCount(total))),
    tab==='mech'?[
     h('div',{className:'extra-chips',key:'filters'},
      h('div',{className:'extra-chip-group'},h('span',{className:'extra-chip-label'},'Раздел'),
@@ -118,9 +118,30 @@ class DevelopmentPage extends React.Component{
       }))))
     :h('div',{className:'empty',key:'empty'},'⌕',h('h3',{},'Ничего не найдено'),h('p',{},'Измените фильтры или поисковый запрос.'))
    ]:
-   h('div',{className:'dev-timeline'},data.timeline.slice().reverse().map((t,i)=>h('article',{key:i,className:'dev-entry'},
-    h('div',{className:'dev-entry-date'},new Date(t.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})),
-    h('div',{className:'dev-entry-body'},h('h3',{},t.title),h('ul',{},t.items.map((x,j)=>h('li',{key:j},x))))))));
+   (()=>{
+    const entries=order==='old'?data.timeline.slice():data.timeline.slice().reverse();
+    const catOf=id=>data.categories.find(c=>c.id===id);
+    const out=[];let lastMonth='';
+    out.push(h('div',{className:'extra-chips dev-order',key:'order'},h('div',{className:'extra-chip-group'},
+     h('span',{className:'extra-chip-label'},'Порядок'),
+     chip(order==='old',()=>this.setState({order:'old'}),'С начала разработки','old'),
+     chip(order==='new',()=>this.setState({order:'new'}),'Сначала свежие','new'))));
+    const list=[];
+    entries.forEach((t,i)=>{
+     const dt=new Date(t.date);
+     const month=dt.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+     if(month!==lastMonth){lastMonth=month;list.push(h('div',{className:'dev-month',key:'m'+month+i},month));}
+     list.push(h('article',{key:'e'+i,className:'dev-entry'},
+      h('div',{className:'dev-entry-date'},dt.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})),
+      h('i',{className:'dev-entry-dot'}),
+      h('div',{className:'dev-entry-body'},
+       h('h3',{},t.title),
+       h('ul',{},t.items.map((x,j)=>h('li',{key:j},x))),
+       (t.tags&&t.tags.length)?h('div',{className:'dev-entry-tags'},t.tags.map(id=>{const c=catOf(id);return c&&h('button',{key:id,type:'button',onClick:()=>this.setState({tab:'mech',cat:id,status:'all',q:''})},c.title);})):null)));
+    });
+    out.push(h('div',{className:'dev-timeline',key:'tl'},list));
+    return out;
+   })());
  }
 }
 class GameCatalogPage extends React.Component{
