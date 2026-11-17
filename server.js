@@ -69,6 +69,7 @@ const handler=async(req,res)=>{
    if(await extras.handle(req,res,u,{session,trustedOrigin,body}))return;
    if(await gameCatalog.handle(req,res,u,{session,trustedOrigin,body}))return;
    if(req.method==='GET'&&pathname==='/api/content')return json(res,200,{site:db.site,categories:db.categories,articles:db.articles.filter(a=>a.published||session(req))});
+   if(req.method==='GET'&&pathname==='/api/development')return json(res,200,JSON.parse(fs.readFileSync(path.join(ROOT,'catalog','development.json'),'utf8')));
    if(req.method==='GET'&&pathname==='/api/me')return json(res,200,{admin:session(req)});
    if(req.method==='POST'&&pathname==='/api/login'){
     if(!trustedOrigin(req))return sendError(res,403,'Недопустимое происхождение запроса');
