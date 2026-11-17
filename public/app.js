@@ -146,9 +146,9 @@ class DevelopmentPage extends React.Component{
  }
 }
 class GameCatalogPage extends React.Component{
- constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],recipe:null,loading:true,error:'',copied:'',modal:null};this._seq=0;this._timer=null;this._copyTimer=null;}
+ constructor(props){super(props);this.state={q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],total:0,pages:1,meta:null,item:null,related:[],variants:[],recipe:null,loading:true,error:'',copied:'',modal:null,showAllVariants:false};this._seq=0;this._timer=null;this._copyTimer=null;}
  componentDidMount(){this.load();this._esc=e=>{if(e.key==='Escape'&&this.state.modal)this.setState({modal:null});};if(!this.props.inModal)window.addEventListener('keydown',this._esc);}
- componentDidUpdate(prev,prevState){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null},()=>this.load());}if(prevState&&!!prevState.modal!==!!this.state.modal&&!this.props.inModal){document.body.style.overflow=this.state.modal?'hidden':'';}}
+ componentDidUpdate(prev,prevState){if(prev.mode!==this.props.mode||prev.id!==this.props.id){this.setState({q:'',role:'all',cat:'',sub:'',sort:'',kind:'',craft:'',level:'',page:1,rows:[],item:null,recipe:null,showAllVariants:false},()=>this.load());}if(prevState&&!!prevState.modal!==!!this.state.modal&&!this.props.inModal){document.body.style.overflow=this.state.modal?'hidden':'';}}
  componentWillUnmount(){clearTimeout(this._timer);clearTimeout(this._copyTimer);this._seq++;if(this._esc)window.removeEventListener('keydown',this._esc);if(this.state.modal&&!this.props.inModal)document.body.style.overflow='';}
  filter(name,value){this.setState({[name]:value,page:1},()=>{clearTimeout(this._timer);this._timer=setTimeout(()=>this.load(),220);});}
  page(n){this.setState({page:n},()=>this.load());}
@@ -248,27 +248,31 @@ class GameCatalogPage extends React.Component{
    h(GameCatalogPage,{key:'m-'+m.kind+'-'+m.id,mode:m.kind,id:m.id,admin:this.props.admin,inModal:true})));}
  field(name,val){return h('div',{className:'game-field'},h('small',{},name),h('strong',{},val==null?'—':val));}
  recipeVariants(r){
-  const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
+  const full=this.state.variants;if(!Array.isArray(full)||full.length<2)return null;
+  const LIM=40;const list=this.state.showAllVariants?full:full.slice(0,LIM);const more=full.length-list.length;
   return h('section',{className:'game-detail-block game-item-variants'},
-    h('h2',{},'\u0412\u0430\u0440\u0438\u0430\u043d\u0442\u044b \u0440\u0435\u0446\u0435\u043f\u0442\u0430 \u00b7 '+fmtCount(list.length)),
+    h('h2',{},'\u0412\u0430\u0440\u0438\u0430\u043d\u0442\u044b \u0440\u0435\u0446\u0435\u043f\u0442\u0430 \u00b7 '+fmtCount(full.length)),
     h('p',{className:'game-variants-hint'},'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u0438\u043a\u043e\u043d\u043a\u0443 \u2014 \u0432\u0430\u0440\u0438\u0430\u043d\u0442 \u043e\u0442\u043a\u0440\u043e\u0435\u0442\u0441\u044f \u0441\u0440\u0430\u0437\u0443. \u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u043e\u0442\u043c\u0435\u0447\u0435\u043d \u0440\u0430\u043c\u043a\u043e\u0439.'),
     h('div',{className:'game-variant-squares'},list.map(v=>h(Link,{
       key:v.id,to:'/game/recipe/'+v.id,
       className:'game-variant-square'+(v.id===r.id?' selected current':''),
       title:'\u0423\u0440\u043e\u0432\u0435\u043d\u044c '+(v.level??'\u2014')+' \u00b7 '+(v.ingredients||'')},
       v.outputImageUrl?h('img',{src:wikiUrl(v.outputImageUrl),alt:'',loading:'lazy'}):h('span',{},'\u25c8'),
-      h('em',{className:'game-variant-num'},'\u0443\u0440.'+(v.level??'\u2014'))))));}
+      h('em',{className:'game-variant-num'},'\u0443\u0440.'+(v.level??'\u2014')))),
+      more>0?h('button',{type:'button',className:'game-variants-more',onClick:()=>this.setState({showAllVariants:true})},'Показать все '+fmtCount(full.length)):null));}
  itemVariants(item){
-  const list=this.state.variants;if(!Array.isArray(list)||list.length<2)return null;
+  const full=this.state.variants;if(!Array.isArray(full)||full.length<2)return null;
+  const LIM=40;const list=this.state.showAllVariants?full:full.slice(0,LIM);const more=full.length-list.length;
   return h('section',{className:'game-detail-block game-item-variants'},
-    h('h2',{},'\u0412\u0430\u0440\u0438\u0430\u043d\u0442\u044b \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u0430 \u00b7 '+fmtCount(list.length)),
+    h('h2',{},'\u0412\u0430\u0440\u0438\u0430\u043d\u0442\u044b \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u0430 \u00b7 '+fmtCount(full.length)),
     h('p',{className:'game-variants-hint'},'\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u043d\u0430 \u0438\u043a\u043e\u043d\u043a\u0443 \u2014 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0432\u0430\u0440\u0438\u0430\u043d\u0442\u0430 \u043e\u0442\u043a\u0440\u043e\u0435\u0442\u0441\u044f \u0441\u0440\u0430\u0437\u0443. \u0422\u0435\u043a\u0443\u0449\u0438\u0439 \u043e\u0442\u043c\u0435\u0447\u0435\u043d \u0440\u0430\u043c\u043a\u043e\u0439.'),
     h('div',{className:'game-variant-squares'},list.map((v,i)=>h(Link,{
       key:v.id,to:'/game/item/'+v.id,
       className:'game-variant-square'+(v.id===item.id?' selected current':''),
       title:(v.internal||v.id)+' \u00b7 '+fmtPrice(v.gamePrice??v.referencePrice)+(v.craft?' \u00b7 '+v.craft.ingredients:'')},
       v.imageUrl?h('img',{src:wikiUrl(v.imageUrl),alt:'',loading:'lazy'}):h('span',{},'\u25c8'),
-      h('em',{className:'game-variant-num'},i+1)))));}
+      h('em',{className:'game-variant-num'},i+1))),
+      more>0?h('button',{type:'button',className:'game-variants-more',onClick:()=>this.setState({showAllVariants:true})},'Показать все '+fmtCount(full.length)):null));}
  itemStats(item){const stats=item&&item.stats;if(!Array.isArray(stats)||!stats.length)return null;
   const groups=new Map();for(const row of stats){const g=row[3]||'общее';if(!groups.has(g))groups.set(g,[]);groups.get(g).push(row);}
   return h('section',{className:'game-detail-block game-item-stats'},h('h2',{},'Игровые характеристики'),
