@@ -308,7 +308,7 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 }
 
 /* ==== Hero-персонажи с kcd2rp.ru + слитные вкладки ==== */
-.ref-hero-illustration{top:0;bottom:0;height:100%;width:min(31vw,480px);max-height:none;object-fit:cover;object-position:top;opacity:1}
+.ref-hero-illustration{top:0;bottom:0;height:100%;width:min(31vw,480px);max-height:none;object-fit:cover;object-position:50% 18%;opacity:1}
 .ref-hero-illustration.left{left:-16px;-webkit-mask-image:linear-gradient(to right,#000 55%,rgba(0,0,0,.45) 82%,transparent 100%),linear-gradient(to bottom,#000 72%,transparent 100%);mask-image:linear-gradient(to right,#000 55%,rgba(0,0,0,.45) 82%,transparent 100%),linear-gradient(to bottom,#000 72%,transparent 100%);-webkit-mask-composite:source-in;mask-composite:intersect}
 .ref-hero-illustration.right{right:-16px;-webkit-mask-image:linear-gradient(to left,#000 55%,rgba(0,0,0,.45) 82%,transparent 100%),linear-gradient(to bottom,#000 72%,transparent 100%);mask-image:linear-gradient(to left,#000 55%,rgba(0,0,0,.45) 82%,transparent 100%),linear-gradient(to bottom,#000 72%,transparent 100%);-webkit-mask-composite:source-in;mask-composite:intersect}
 @media (max-width:1100px){.ref-hero-illustration{width:27vw}}
