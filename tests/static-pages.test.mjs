@@ -112,16 +112,9 @@ test('icon gallery and animation reference retain search and pagination', async 
   assert.equal(detail.body.animation.clip, clip.clip);
 });
 
-test('all map tiles are present and repository-subpath data requests work', async () => {
-  const { api, requests } = adapter('/KCD2Wiki');
-  const maps = await get(api, '/KCD2Wiki/api/maps/meta');
-  assert.equal(maps.status, 200);
-  assert.ok(requests.includes('/KCD2Wiki/data/maps.json'));
-  for (const [region, info] of Object.entries(maps.body.regions)) {
-    assert.ok(fs.existsSync(path.join(dist, 'maps', region, 'overview.webp')));
-    for (let row = 0; row < info.rows; row++) for (let col = 0; col < info.cols; col++) {
-      assert.ok(fs.existsSync(path.join(dist, 'maps', region, `tile_${row}_${col}.jpg`)));
-    }
-  }
+test('map assets are not published and unknown API routes fail cleanly', async () => {
+  const { api } = adapter('/KCD2Wiki');
+  assert.ok(!fs.existsSync(path.join(dist, 'maps')));
+  assert.ok(!fs.existsSync(path.join(dist, 'data', 'maps.json')));
   assert.equal((await get(api, '/api/unknown')).status, 404);
 });

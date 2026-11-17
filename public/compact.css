@@ -306,3 +306,11 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
  .wf-open .wf-close{display:block}
  .wf-apply{display:block;position:sticky;bottom:-12px;margin:10px -2px 0;border:0;background:var(--wiki-accent-primary);color:#fff;border-radius:9px;padding:10px;font-size:14px;font-weight:800;cursor:pointer}
 }
+
+/* ==== Hero-персонажи с kcd2rp.ru + слитные вкладки ==== */
+.ref-hero-illustration{top:auto;bottom:0;height:calc(100% - 18px);width:190px;object-fit:contain;object-position:bottom;opacity:.95}
+@media (max-width:940px){.ref-hero-illustration{width:150px}}
+@media (max-width:690px){.ref-hero-illustration{width:110px;opacity:.45}}
+.dev-tabs{display:inline-flex;gap:0;border:1px solid var(--ui-border);border-radius:9px;overflow:hidden;background:var(--ui-surface)}
+.dev-tabs .ref-tab{border:0;border-radius:0;margin:0}
+.dev-tabs .ref-tab+.ref-tab{border-left:1px solid var(--ui-border)}
