@@ -28,7 +28,7 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(path.join(out, 'data'), { recursive: true });
 fs.cpSync(publicDir, out, {
   recursive: true,
-  filter: source => !['index.html', 'demo.html'].includes(path.basename(source))
+  filter: source => !['index.html', 'demo.html'].includes(path.basename(source)) && path.basename(source) !== 'maps'
 });
 fs.copyFileSync(path.join(root, 'THIRD_PARTY_NOTICES.md'), path.join(out, 'THIRD_PARTY_NOTICES.md'));
 
@@ -84,7 +84,6 @@ const regionInfo = {
   trosky: { title: 'Троски', rows: 4, cols: 4, tileSize: 1024, source: 'Карты игрового режима KCD2RP', labels: mapLabels.labels.trosky },
   kuttenberg: { title: 'Кутна-Гора', rows: 5, cols: 6, tileSize: 1024, source: 'Карты игрового режима KCD2RP', labels: mapLabels.labels.kuttenberg }
 };
-writeJson('maps', { regions: regionInfo, markers: maps.markers, calibrated: false, notice: 'Игровые X/Y не привязаны к пикселям; метки размещаются вручную редактором.' });
 writeJson('development', development);
 
 // Cache busting: a content hash of the frontend bundle versions every asset URL,
