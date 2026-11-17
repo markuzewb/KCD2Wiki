@@ -322,8 +322,8 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 @media (max-width:1100px){.ref-hero-art{width:30vw}}
 @media (max-width:690px){.ref-hero-art{width:34vw;opacity:.55}}
 /* Светлая тема: те же персонажи, нарисованные на белом */
-html:not([data-theme="dark"]) .ref-hero-art.left .ref-hero-illustration{content:url("media/heroes/hero-outlaw-light.webp")}
-html:not([data-theme="dark"]) .ref-hero-art.right .ref-hero-illustration{content:url("media/heroes/hero-knight-light.webp")}
+html:not([data-theme="dark"]) .ref-hero-art.left .ref-hero-illustration{content:url("media/heroes/hero-outlaw-full-light.webp")}
+html:not([data-theme="dark"]) .ref-hero-art.right .ref-hero-illustration{content:url("media/heroes/hero-knight-full-light.webp")}
 .ref-hero-art.left .ref-hero-illustration{-webkit-mask-image:linear-gradient(to right,#000 0,#000 55%,transparent 92%);mask-image:linear-gradient(to right,#000 0,#000 55%,transparent 92%)}
 .ref-hero-art.right .ref-hero-illustration{-webkit-mask-image:linear-gradient(to left,#000 0,#000 55%,transparent 92%);mask-image:linear-gradient(to left,#000 0,#000 55%,transparent 92%)}
 .ref-server-strip,.ref-home-categories,.ref-home-featured{position:relative;z-index:1}
