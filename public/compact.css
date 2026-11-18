@@ -314,8 +314,8 @@ html[data-theme="dark"] .dev-status-wip{color:#eec36d;background:#38301a;border-
 html:not([data-theme="dark"]) .ref-home-bg{background-image:url("media/backdrops/bohemia-light.webp");opacity:.55}
 .ref-hero-art{position:fixed;top:56px;height:calc(100vh - 56px);height:calc(100dvh - 56px);width:auto;max-width:40vw;pointer-events:none;z-index:0;
  -webkit-mask-image:linear-gradient(to bottom,#000 0,#000 76%,transparent 99%);mask-image:linear-gradient(to bottom,#000 0,#000 76%,transparent 99%)}
-.ref-hero-art.left{left:0;aspect-ratio:418/1324}
-.ref-hero-art.right{right:0;aspect-ratio:590/1318}
+.ref-hero-art.left{left:0;aspect-ratio:408/1310}
+.ref-hero-art.right{right:0;aspect-ratio:581/1310}
 .ref-hero-art .ref-hero-illustration{position:static;display:block;width:100%;height:100%;max-height:none;object-fit:contain;opacity:1;-webkit-mask-image:none;mask-image:none}
 .ref-hero-art.left .ref-hero-illustration{object-position:left bottom}
 .ref-hero-art.right .ref-hero-illustration{object-position:right bottom}
