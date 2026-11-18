@@ -343,3 +343,5 @@ html:not([data-theme="dark"]) .ref-home-bg{background-image:url("media/backdrops
 
 .game-variants-more{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:0 14px;border:1px dashed var(--ref-border);border-radius:10px;background:var(--ref-soft);color:var(--ref-text);font-size:15px;font-weight:600;cursor:pointer}
 .game-variants-more:hover{border-color:var(--ref-pink);color:var(--ref-pink)}
+.article-link{color:var(--wiki-accent-primary);text-decoration:underline;text-underline-offset:3px}
+.article-link:hover{opacity:.85}
